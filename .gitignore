@@ -1,0 +1,16 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files
+# *.jar
+
+*.iml
+*.asv
+.idea/
+tp.txt
+prio.txt
+schedule.txt
+src/sosp/main/Test.java
