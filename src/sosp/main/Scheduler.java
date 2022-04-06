@@ -73,7 +73,7 @@ public class Scheduler {
 			}
 				tasks.addAll(job.emittedReducerList);
 		}
-		System.out.println(tasks.size());
+		System.out.printf("The number of tasks in all jobs: %d\n", tasks.size());
 		Collections.sort(tasks, new Comparator<Task>(){
             @Override public int compare(Task arg0, Task arg1) {
                 return arg1.startTime==arg0.startTime ? 0 : (arg1.startTime>arg0.startTime ? -1 : 1);

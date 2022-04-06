@@ -37,12 +37,12 @@ public class Measurement {
 	}
 	
 	public static void OutputCompletionTime2(Job[] jobs){
-		ArrayList<Double> jct = new ArrayList<Double>();
-		ArrayList<Double> cct = new ArrayList<Double>();
-		ArrayList<Double> mct = new ArrayList<Double>();
-		ArrayList<Double> fct = new ArrayList<Double>();
-		double[] sum = new double[10];
-		int[] cnt = new int[10];
+		ArrayList<Double> jct = new ArrayList<Double>(); // job completion time
+		ArrayList<Double> cct = new ArrayList<Double>(); // coflow completion time
+		ArrayList<Double> mct = new ArrayList<Double>(); // macroflow completion time
+		ArrayList<Double> fct = new ArrayList<Double>(); // flow completion time
+		double[] sum = new double[10]; // 将job的coflow大小划分为10个档次, 分别统计每个档次中的job completion time的和
+		int[] cnt = new int[10]; // 将job的coflow大小划分为10个档次, 分别统计每个档次中的个数
 		for(Job job:jobs){
 			Coflow coflow = job.coflow;
 			for(Macroflow mf:coflow.macroflows){
@@ -57,7 +57,7 @@ public class Measurement {
 			sum[k]+= job.reduceStageFinishTime - job.arriveTime;
 		}
 //		System.out.printf("AJCT: %.3f\n",mean(jct));
-		System.out.printf("%.3f\n",mean(jct));
+		System.out.printf("mean of job completion time: %.3f\n",mean(jct));
 		//System.out.printf("ACCT: %.3f\n",mean(cct));
 		//System.out.printf("AMCT: %.3f\n",mean(mct));
 		//System.out.printf("AFCT: %.3f\n",mean(fct));
@@ -65,7 +65,7 @@ public class Measurement {
 		int[] p = new int[]{90,95,99,100};
 		for(int i=0;i<p.length;++i){
 //			System.out.printf("JCT%d: %.3f\n",p[i],pct(jct,p[i]/100.0));
-			System.out.printf("%.3f\n",pct(jct,p[i]/100.0));
+			System.out.printf("%dth percentile %.3f\n",p[i],pct(jct,p[i]/100.0));
 			//System.out.printf("CCT%d: %.3f\n",p[i],pct(cct,p[i]/100.0));
 			//System.out.printf("MCT%d: %.3f\n",p[i],pct(mct,p[i]/100.0));
 			//System.out.printf("FCT%d: %.3f\n",p[i],pct(fct,p[i]/100.0));
