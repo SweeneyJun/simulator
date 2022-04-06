@@ -3,6 +3,7 @@ package sosp.main;
 public class Topology {
 	
 	private static boolean gaint_switch = false;
+	private static boolean separate_gaint_switch = false;
 	
 	public static void loadFromFile(){
 		assert(false); // not available
@@ -82,4 +83,18 @@ public class Topology {
 		}
 		return 1-free/total;
 	}
+
+	// funcs used in Separate Condition
+	public static void loadSeparateGaint(){
+		separate_gaint_switch = true;
+		assert(Settings.nStorageHosts > 0);
+	}
+
+	public static void loadSepTwoLayer(){
+		separate_gaint_switch = false;
+		assert(Settings.nStorageHosts > 0 && Settings.nStorageRacks > 0 && Settings.storageFanIn > 0);
+		assert(Settings.nStorageHosts % Settings.nStorageRacks == 0);
+	}
 }
+
+

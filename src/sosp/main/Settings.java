@@ -25,6 +25,14 @@ public class Settings {
 	public static double fanIn = 0; 	// not used in giant switch
 	public static int nSlots = 4; 		// slot number
 	public static int nPriorities = 1; 	// 0 means infinite priorities, >0 means n priorities
+
+	// topologies in condition that separation between storage and computation
+	public static boolean isSeparate = false;
+	public static boolean isSepGaintSwitch = false;
+	public static int nStorageHosts = -1; // Storage host number
+	public static int nStorageRacks = -1; // Storage rack number
+	public static int storageFanIn = 0;
+
 	
 	// traffics
 	public static double sizeScale = 1; // size unit: Gb
@@ -69,6 +77,14 @@ public class Settings {
 			}
 			nSlots = readInteger(p, "nSlots");
 			nPriorities = readInteger(p, "nPriorities");
+
+			// read topologies in condition that separation between storage and computation
+			isSeparate = readBoolean(p, "isSeparate");
+			nStorageHosts = readInteger(p, "nStorageHosts");
+			if(!isSepGaintSwitch){
+				nStorageRacks = readInteger(p, "nStorageRacks");
+				storageFanIn = readInteger(p, "storageFanIn");
+			}
 			
 			// read traffics
 			sizeScale = readDouble(p, "sizeScale");
