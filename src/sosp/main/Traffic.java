@@ -63,7 +63,7 @@ public class Traffic {
 			job.arriveTime = Long.parseLong(elem[++pointer])/1000.0 * Settings.timeScale; // normalized time: s
 
 			Collections.shuffle(queuePick,Settings.r);
-			job.jobQueue = Scheduler.jobQueues.get(queuePick.get(0));
+			job.jobQueue = Scheduler.jobQueues.get(queuePick.get(0)); // wcx:随机选一个JobQueue塞进去?
 
 			// tasks
 			int mappers = Integer.parseInt(elem[++pointer]);

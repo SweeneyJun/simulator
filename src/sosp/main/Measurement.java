@@ -101,7 +101,7 @@ public class Measurement {
 		public double duration;
 		public double hostThroughput;
 		public double coreThroughput;
-		public Throughput(double tm, double dur, double htp, double ctp){
+		public Throughput(double tm, double dur, double htp, double ctp){ // wcx: htp是host throughput  ctp是core throughput
 			time = tm; duration = dur; hostThroughput = htp; coreThroughput = ctp;
 		}
 	}

@@ -32,6 +32,7 @@ public class Settings {
 	public static int nStorageHosts = -1; // Storage host number
 	public static int nStorageRacks = -1; // Storage rack number
 	public static int storageFanIn = 0;
+	public static double storageSpeed = 0;
 
 	
 	// traffics
@@ -53,12 +54,13 @@ public class Settings {
 	public static int algorithm = -1;
 	public static Algorithm algo = null; // task placement and network scheduling algorithms
 
-	public static double speed = 0;  //?
+	public static double speed = 0;  // 计算集群中的链路带宽 (实现中默认上传下载带宽相同, 皆为此值, 在Topology.getLinkBw()函数中被使用)
 
 	public static int reduceNum = 3;
 	public static double parallelism = 0; //?
 
-	public static void loadFromFile(String file, String[] args){
+	public static void loadFromFile(String file, String[]
+			args){
 		try{
 			Properties p = new Properties();
 			FileInputStream fis = new FileInputStream(file);
@@ -85,6 +87,7 @@ public class Settings {
 				nStorageRacks = readInteger(p, "nStorageRacks");
 				storageFanIn = readInteger(p, "storageFanIn");
 			}
+			storageSpeed = readDouble(p, "storageSpeed");
 			
 			// read traffics
 			sizeScale = readDouble(p, "sizeScale");
