@@ -29,6 +29,7 @@ public interface Algorithm {
 
 	public static int estimateRealMapperNumber(double shuffleSizeMB, int nMapperHosts){
 		// we assume the I/O ratio of map-phase is 1, and the input data size of each map-task is 100MB
+		// wcx: 这里后面可以考虑根据一小段job的分布提取一个job shuffle一般多大的先验, 通过I/O比率转化为Input Size后, 再动态决定每个map-task应该多大
 		return Math.max((int)Math.ceil(shuffleSizeMB/Settings.mapperSizeMB), nMapperHosts);
 	}
 	

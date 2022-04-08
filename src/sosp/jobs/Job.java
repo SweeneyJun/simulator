@@ -32,6 +32,8 @@ public class Job {
 	public ArrayList<ReduceTask> pendingReducerList = null;
 	public ArrayList<MapTask>[] emittedMapperList = null; // the j-th mapper on the i-th host, see $hdfsHosts$ for host number
 	public ArrayList<ReduceTask> emittedReducerList = null;
+
+	public double mapInputSize = 0;
 	
 	// global static variables
 	public static int nArrivedJobs = 0;

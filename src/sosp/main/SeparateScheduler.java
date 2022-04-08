@@ -45,10 +45,14 @@ public class SeparateScheduler{
     }
 
     private static void initialize() throws FileNotFoundException{
-        jobs = Traffic.loadFromFile("FB2010-1Hr-150-0.txt");
-        freeSlots = new int[Settings.nHosts];
-        for(int i = 0; i < freeSlots.length; ++i)
+        jobs = SeparateTraffic.loadFromFile("FB2010-1Hr-150-0.txt");
+        freeSlots = new int[Settings.nHosts + Settings.nStorageHosts];
+        for(int i = 0; i < Settings.nHosts; ++i) {
             freeSlots[i] = Settings.nSlots;
+        }
+        for(int i = Settings.nHosts; i < Settings.nStorageHosts; ++i){
+            freeSlots[i] = 0;
+        }
         if(Settings.isSepGaintSwitch)
             Topology.loadGaint();
         else

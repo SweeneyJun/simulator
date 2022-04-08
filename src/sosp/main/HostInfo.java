@@ -20,7 +20,15 @@ public class HostInfo {
         this.shuffleReducerNum = 0;
         this.hostShuffleSize = 0;
         this.minCoflowSize = 0;
-        this.freeSlots = Settings.nSlots;
+        if(hostId < Settings.nHosts) {
+            this.freeSlots = Settings.nSlots;
+        }
+        else if(hostId >= Settings.nHosts && hostId < Settings.nStorageHosts){
+            this.freeSlots = 0;
+        }
+        else{
+            assert (false); // should not go here
+        }
 //        if (Settings.algo instanceof Max3Reducer) {
 //            shuffleReducer = new ReduceTask[Settings.reduceNum];
 //        }
