@@ -289,5 +289,5 @@ public class Priority {
 //		for(MapTask mapper: SeparateScheduler.arrivedMappers){
 //
 //		}
-	}
 }
+

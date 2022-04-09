@@ -30,6 +30,7 @@ public class Settings {
 	public static boolean isSeparate = false;
 	public static int storageFanIn = 0;
 	public static double storageSpeed = 0;
+	public static double switchBottleFreeBw = 0;
 
 	
 	// traffics
@@ -83,6 +84,7 @@ public class Settings {
 			storageFanIn = readInteger(p, "storageFanIn");
 
 			storageSpeed = readDouble(p, "storageSpeed");
+			switchBottleFreeBw = readDouble(p, "switchBottleFreeBw");
 			
 			// read traffics
 			sizeScale = readDouble(p, "sizeScale");

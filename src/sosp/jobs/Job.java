@@ -1,7 +1,10 @@
 package sosp.jobs;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Map;
 
+import sosp.main.SeparateScheduler;
 import sosp.main.Settings;
 import sosp.network.Coflow;
 import sosp.network.Macroflow;
@@ -26,8 +29,10 @@ public class Job {
 	public double estimatedRunningTime = 0;
 	
 	// runtime variables (modified by many times)
+	public int nInputMappers = 0;
 	public int nActiveMappers = 0; 
 	public int nActiveReducers = 0;
+	public LinkedList<MapTask> notInputMapperList = null;
 	public ArrayList<MapTask> pendingMapperList = null;
 	public ArrayList<ReduceTask> pendingReducerList = null;
 	public ArrayList<MapTask>[] emittedMapperList = null; // the j-th mapper on the i-th host, see $hdfsHosts$ for host number
@@ -45,11 +50,11 @@ public class Job {
 	}
 	
 	public int nActiveTasks_const(){
-		return nActiveMappers + nActiveReducers;
+		return Settings.isSeparate ? nInputMappers + nActiveMappers + nActiveReducers : nActiveMappers + nActiveReducers;
 	}
 	
 	public boolean hasPendingTasks_const(){
-		return pendingMapperList.size()>0 || pendingReducerList.size()>0;
+		return Settings.isSeparate ? notInputMapperList.size() + pendingMapperList.size()>0 || pendingReducerList.size()>0 : pendingMapperList.size()>0 || pendingReducerList.size()>0;
 	}
 	
 	public int countReadyTasks_const() {
@@ -58,6 +63,19 @@ public class Job {
 	
 	public boolean hasPendingMappers_const(){
 		return pendingMapperList.size()>0;
+	}
+
+	public void oneMapperBeginInput(int host, MapTask mapper){
+		++nInputMappers;
+		assert(notInputMapperList.remove(mapper));
+		double allocatedBw = Math.min(SeparateScheduler.switchFreeBw, SeparateScheduler.freeBw[host]);
+		SeparateScheduler.switchFreeBw -= allocatedBw;
+		SeparateScheduler.freeBw[host] -= allocatedBw;
+		SeparateScheduler.totalFreeBw -= allocatedBw;
+		mapper.allocatedInputBw = allocatedBw; // 后续要归还switchFreeBw/freeBw[host]/totalFreeBw
+	}
+	public void oneMapperEndInput(){ // TODO Input结束时是否应该开始运行行为? 即原Scheduler Simulator函数里调用oneMapperStarted(ht.host, mapper)的行为, 还是另写过程, 等待思考
+		--nInputMappers;
 	}
 	
 	public void oneMapperStarted(int host, MapTask mapper){

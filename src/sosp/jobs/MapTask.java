@@ -14,6 +14,8 @@ public class MapTask extends Task{
 	public double predictComputationDelay = 0;
 
 	public double inputSize = -1;
+	public double inputFinishTime = -1;  // TODO 区分当前MapTask是否该运行? 如果在Input结束直接调用运行的话好像用不着这个变量, 先留着看吧
+	public double allocatedInputBw = -1; // 结束Input阶段以后归还使用
 	
 	public MapTask(Job parents, int id){
 		_job = parents;

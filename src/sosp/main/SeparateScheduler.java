@@ -19,17 +19,20 @@ public class SeparateScheduler{
 
     public static double time = 0; // current simulation time
     public static Job[] jobs = null; // all of the jobs
-    public static int[] freeSlots = null; // # free slots in each host
+    public static int[] freeSlots = null; //  free slots in each host
     public static double[] freeBw = null;
+    public static double totalFreeBw = -1;
+    public static double switchFreeBw = -1;
 
     public static ArrayList<Job> activeJobs = new ArrayList<Job>(); // arrived and not finished coflows
     public static ArrayList<Job> pendingJobs = new ArrayList<Job>(); // arrived and not finished coflows
     public static ArrayList<ReduceTask> activeReducers = new ArrayList<ReduceTask>(); // emitted and not finished reducers
-    public static ArrayList<MapTask> activeMappers = new ArrayList<MapTask>(); // emitted and not finished mappers
+//    public static ArrayList<MapTask> activeMappers = new ArrayList<MapTask>(); // emitted and not finished mappers 更改需求后暂时不用它了
     public static ArrayList<Measurement.Throughput> throughput = null;
     public static ArrayList<Double> slot = null;
 
-    public static ArrayList<MapTask> arrivedMappers = new ArrayList<MapTask>();
+//    public static ArrayList<MapTask> arrivedMappers = new ArrayList<MapTask>(); // job已经到来, 但仍未执行input的MapTask  因为要先选择job再选择里面的MapTask进行Input
+    // 所以不太方便在Scheduler里设置全局的统计
 
     public static ArrayList<JobQueue> jobQueues = new ArrayList<>();
 
@@ -52,6 +55,12 @@ public class SeparateScheduler{
         for(int i = 0; i < Settings.nHosts; ++i) {
             freeSlots[i] = Settings.nSlots;
         }
+
+        freeBw = Topology.getLinkBw(); // 让Scheduler知道各个机器的带宽情况以便后续MapInput阶段调度使用
+        totalFreeBw = Arrays.stream(freeBw).sum();
+        switchFreeBw = Settings.switchBottleFreeBw;
+
+        System.out.printf("TotalFreeBw: %d\n", totalFreeBw);
 
         if(Settings.isGaintSwitch)
             Topology.loadGaint();
@@ -96,7 +105,7 @@ public class SeparateScheduler{
                 System.out.printf("%.3f job %d started\n", time, job.jobId);
 
                 for(int i = 0; i < job.nMappers; i++){
-                    arrivedMappers.add(job.pendingMapperList.get(i));
+                    job.notInputMapperList.add(job.pendingMapperList.get(i)); // 供调度算法选择的还未Input的MapTask
                 }
             }
 
@@ -105,6 +114,19 @@ public class SeparateScheduler{
 
         // 2. scheduling tasks (both mapper and reducer)
         // when scheduling the mapTask, handle the input file transmitting process
+        while(true){
+            HostAndTask ht = Settings.algo.allocateHostAndTask(); // TODO 这里如果不把Setting.algo设为DoubleFIFO会报错, 因为到目前位置只实现了这一个存算分离场景下的Algorithm
+            if(ht == null){
+                break;
+            }
+            --freeSlots[ht.host];
+            hostInfos[ht.host].freeSlots--;
+            if(ht.task instanceof MapTask){
+                MapTask mapper = (MapTask) ht.task;
+                mapper._job.oneMapperBeginInput(ht.host, mapper);
+            }
+        }
+
     }
 
 }

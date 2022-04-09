@@ -87,13 +87,10 @@ public class Topology {
 	// funcs used in Separate Condition
 	public static void loadSeparateGaint(){
 		separate_gaint_switch = true;
-		assert(Settings.nStorageHosts > 0);
 	}
 
 	public static void loadSepTwoLayer(){
 		separate_gaint_switch = false;
-		assert(Settings.nStorageHosts > 0 && Settings.nStorageRacks > 0 && Settings.storageFanIn > 0);
-		assert(Settings.nStorageHosts % Settings.nStorageRacks == 0);
 	}
 }
 
