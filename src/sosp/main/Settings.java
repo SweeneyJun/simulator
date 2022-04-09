@@ -28,9 +28,6 @@ public class Settings {
 
 	// topologies in condition that separation between storage and computation
 	public static boolean isSeparate = false;
-	public static boolean isSepGaintSwitch = false;
-	public static int nStorageHosts = -1; // Storage host number
-	public static int nStorageRacks = -1; // Storage rack number
 	public static int storageFanIn = 0;
 	public static double storageSpeed = 0;
 
@@ -82,11 +79,9 @@ public class Settings {
 
 			// read topologies in condition that separation between storage and computation
 			isSeparate = readBoolean(p, "isSeparate");
-			nStorageHosts = readInteger(p, "nStorageHosts");
-			if(!isSepGaintSwitch){
-				nStorageRacks = readInteger(p, "nStorageRacks");
-				storageFanIn = readInteger(p, "storageFanIn");
-			}
+
+			storageFanIn = readInteger(p, "storageFanIn");
+
 			storageSpeed = readDouble(p, "storageSpeed");
 			
 			// read traffics

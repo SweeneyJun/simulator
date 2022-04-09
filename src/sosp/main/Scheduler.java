@@ -152,7 +152,7 @@ public class Scheduler {
 			while(Job.nArrivedJobs<jobs.length && jobs[Job.nArrivedJobs].arriveTime <= time){
 				Job job = jobs[Job.nArrivedJobs++];
 				Coflow coflow = job.coflow;
-				coflow.start(time);
+				coflow.start(time); // 这里是错的, 此时job才刚刚到来, 连map阶段都没有做完, coflow不能开始
 				if (activeJobs.size() < parallelism) {
 					activeJobs.add(job);
 					job.jobQueue.activeJobs.add(job);

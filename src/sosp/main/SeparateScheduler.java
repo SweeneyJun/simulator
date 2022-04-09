@@ -29,6 +29,8 @@ public class SeparateScheduler{
     public static ArrayList<Measurement.Throughput> throughput = null;
     public static ArrayList<Double> slot = null;
 
+    public static ArrayList<MapTask> arrivedMappers = new ArrayList<MapTask>();
+
     public static ArrayList<JobQueue> jobQueues = new ArrayList<>();
 
 
@@ -46,22 +48,19 @@ public class SeparateScheduler{
 
     private static void initialize() throws FileNotFoundException{
         jobs = SeparateTraffic.loadFromFile("FB2010-1Hr-150-0.txt");
-        freeSlots = new int[Settings.nHosts + Settings.nStorageHosts];
+        freeSlots = new int[Settings.nHosts];
         for(int i = 0; i < Settings.nHosts; ++i) {
             freeSlots[i] = Settings.nSlots;
         }
-        for(int i = Settings.nHosts; i < Settings.nStorageHosts; ++i){
-            freeSlots[i] = 0;
-        }
-        if(Settings.isSepGaintSwitch)
+
+        if(Settings.isGaintSwitch)
             Topology.loadGaint();
         else
             Topology.loadTwoLayer();
 
-        if(Settings.isSepGaintSwitch)
-            Topology.loadSeparateGaint();
-        else
-            Topology.loadSepTwoLayer();
+
+        Topology.loadSeparateGaint();
+
         throughput = Measurement.newThroughput();
         // record the slot using ratio during the schedule
         slot = new ArrayList<Double>();
@@ -73,6 +72,39 @@ public class SeparateScheduler{
         }
         scheduleOut = new PrintWriter(new FileOutputStream("SeparateSchedule.txt"));
 
+        parallelism = (int)(Settings.parallelism*Settings.nSlots*Settings.nHosts); // 这几行都是复制的*山
+        System.out.println(parallelism);
+        assert(Settings.nPriorities>=0);
+        assert(Settings.minTimeStep>0);
+        assert(Settings.epsilon>=0); // 这个在部分比较运算时加上, 避免产生浮点数舍入误差
+
+    }
+
+    private static void simulate(){
+        int nFinishedJobs = 0;
+        while(nFinishedJobs < jobs.length){ // 条件成立说明还有没完成的job
+            while(Job.nArrivedJobs < jobs.length && jobs[Job.nArrivedJobs].arriveTime <= time + Settings.epsilon){ // 还有可以到来的job, 以及模拟时间追上到达时间时才可以开始调度该job
+                Job job = jobs[Job.nArrivedJobs++];
+                Coflow coflow = job.coflow;
+
+                if(activeJobs.size() < parallelism){
+                    activeJobs.add(job);
+                }
+                else{
+                    pendingJobs.add(job);
+                }
+                System.out.printf("%.3f job %d started\n", time, job.jobId);
+
+                for(int i = 0; i < job.nMappers; i++){
+                    arrivedMappers.add(job.pendingMapperList.get(i));
+                }
+            }
+
+
+        }
+
+        // 2. scheduling tasks (both mapper and reducer)
+        // when scheduling the mapTask, handle the input file transmitting process
     }
 
 }

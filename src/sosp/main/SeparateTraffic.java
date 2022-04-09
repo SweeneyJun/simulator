@@ -17,7 +17,6 @@ public class SeparateTraffic {
     @SuppressWarnings("unchecked")
     public static Job[] loadFromFile(String traffic){
         assert(Settings.nHosts>0);
-        assert(Settings.nStorageHosts>0);
         assert(Settings.sizeScale>0);
         assert(Settings.timeScale>0);
 
@@ -113,6 +112,8 @@ public class SeparateTraffic {
                 MapTask mapTask = new MapTask(job, i);
                 mapTask.computationDelay = Algorithm.estimateMapperTime((jobSize/8*1024)/nRealMappers); // 兆琛: 这个估计很不合理, 后续工作中需要修改提出更严谨的估计计算时间
                 mapTask.predictComputationDelay = mapTask.computationDelay *= Math.pow(Settings.sizeEstimationError, 1-2*error.nextDouble());
+
+                mapTask.inputSize = job.coflow.size / nRealMappers; // wcx: 后续用这个size来确定从远端存储节点拉取数据时流的优先级
 
                 // 打乱存储节点编号数组以生成MapTask的输入所在的机器
                 Collections.shuffle(dfs, Settings.r);

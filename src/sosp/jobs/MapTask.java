@@ -12,6 +12,8 @@ public class MapTask extends Task{
 //	public double startTime = -1;
 	public double finishTime = -1;
 	public double predictComputationDelay = 0;
+
+	public double inputSize = -1;
 	
 	public MapTask(Job parents, int id){
 		_job = parents;

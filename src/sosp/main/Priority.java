@@ -8,13 +8,15 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import sosp.jobs.Job;
+import sosp.jobs.MapTask;
 import sosp.jobs.ReduceTask;
 import sosp.network.Coflow;
 import sosp.network.Flow;
 import sosp.network.Macroflow;
 
 public class Priority {
-	
+
+	private static double[] ifThres = null;		// input Flow threshold
 	private static double[] coflowThres = null;	// coflow threshold
 	private static double[] mfThres = null;		// macroflow threshold
 	
@@ -220,6 +222,14 @@ public class Priority {
 		return thres;
 	}
 
+	private static double[] expThresholdsInputFlow(int nRealMappers){
+		double[] thres = expThresholdsCoflow();
+		for(int i = 0; i < thres.length; ++i){
+			thres[i] /= nRealMappers;
+		}
+		return thres;
+	}
+
 	// get the priority
 	private static int queryPriority(double size, double[] thres){ // prio \in [0,thres.length)
 		int prio = 0;
@@ -262,5 +272,22 @@ public class Priority {
 		cout.println();
 		cout.flush();
 		return activeFlows;
+	}
+
+	// wcx: 抽象成一个远端节点后似乎不需要考虑这个流优先级了
+//	public static ArrayList<Flow>[] InputPriority(int nRealMappers){
+//		assert(Settings.isSeparate);
+//		assert(SeparateScheduler.jobs.length > 0);
+//
+//		if(ifThres == null){
+//			ifThres = expThresholdsInputFlow(nRealMappers);
+//		}
+//		@SuppressWarnings("unchecked") ArrayList<Flow>[] activeFlows = new ArrayList[Settings.nPriorities];
+//		for(int i = 0; i < activeFlows.length; ++i){
+//			activeFlows[i] = new ArrayList<Flow>();
+//		}
+//		for(MapTask mapper: SeparateScheduler.arrivedMappers){
+//
+//		}
 	}
 }
