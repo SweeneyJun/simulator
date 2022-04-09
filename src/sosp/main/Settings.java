@@ -142,6 +142,7 @@ public class Settings {
 					case 12: algo = new Hadoop(); break;
 					case 13: algo = new ShuffleWatcher(); break;
 					case 14: algo = new Sig19Neat(); break;
+					case 15: algo = new DoubleFIFO("hybrid"); break;
 				}
 			}
 			assert(algorithm >= 0);

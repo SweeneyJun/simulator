@@ -20,13 +20,14 @@ public class SeparateTraffic {
         assert(Settings.sizeScale>0);
         assert(Settings.timeScale>0);
 
-        ArrayList<Integer> dfs = new ArrayList<Integer>();  // 后续用来打乱生成input文件所在位置的数组
-        for(int i = Settings.nHosts; i < Settings.nHosts + Settings.nStorageHosts; ++i){ // 前nHosts个机器是计算节点, 后nStorageHosts是存储节点
-            dfs.add(i % (Settings.nHosts + Settings.nStorageHosts));
-        }
+        // 存算分离 且 远端存储抽象为单节点的情况下, 不再需要搞这个本地机器了
+//        ArrayList<Integer> dfs = new ArrayList<Integer>();  // 后续用来打乱生成input文件所在位置的数组
+//        for(int i = Settings.nHosts; i < Settings.nHosts + Settings.nStorageHosts; ++i){ // 前nHosts个机器是计算节点, 后nStorageHosts是存储节点
+//            dfs.add(i % (Settings.nHosts + Settings.nStorageHosts));
+//        }
 
         ArrayList<Integer> queuePick = new ArrayList<>(); // 用来从多个JobQueue中随机选一个的Queue的数组
-        for (int i = 0; i < Scheduler.jobQueues.size(); ++i){
+        for (int i = 0; i < SeparateScheduler.jobQueues.size(); ++i){
             queuePick.add(i);
         }
 
@@ -63,7 +64,7 @@ public class SeparateTraffic {
             job.arriveTime = Long.parseLong(elem[++pointer])/1000.0 * Settings.timeScale; // normalized time: s
 
             Collections.shuffle(queuePick, Settings.r);
-            job.jobQueue = Scheduler.jobQueues.get(queuePick.get(0));
+            job.jobQueue = SeparateScheduler.jobQueues.get(queuePick.get(0));
 
             // parse the num
             int mappers = Integer.parseInt(elem[++pointer]); // 注意这只是从日志中读取出来的mapper的数量, 并不是最终模拟采用的数量, 后面会自行估计一下inputSize进而再估计实际应该部署的mapper数量
@@ -110,17 +111,18 @@ public class SeparateTraffic {
             int nRealMappers = Algorithm.estimateRealMapperNumber(jobSize/8*1024,mappers); // from Gb to MB
             for(int i = 0; i < nRealMappers; ++i){
                 MapTask mapTask = new MapTask(job, i);
-                mapTask.computationDelay = Algorithm.estimateMapperTime((jobSize/8*1024)/nRealMappers); // 兆琛: 这个估计很不合理, 后续工作中需要修改提出更严谨的估计计算时间
+                mapTask.computationDelay = Algorithm.estimateMapperTime((jobSize/8*1024)/nRealMappers); // TODO 兆琛: 这个估计很不合理, 后续工作中需要修改提出更严谨的估计计算时间
                 mapTask.predictComputationDelay = mapTask.computationDelay *= Math.pow(Settings.sizeEstimationError, 1-2*error.nextDouble());
 
-                mapTask.inputSize = job.coflow.size / nRealMappers; // wcx: 后续用这个size来确定从远端存储节点拉取数据时流的优先级
+                mapTask.inputSize = job.coflow.size / nRealMappers; // wcx: 后续用这个size除以分配的带宽来计算输入阶段花费的时间predictInputTime
 
+                //存算分离 且 远端存储抽象为单节点的情况下, 不再需要搞这个本地机器了
                 // 打乱存储节点编号数组以生成MapTask的输入所在的机器
-                Collections.shuffle(dfs, Settings.r);
-                mapTask.hdfsHost = new int[Settings.nReplications];
-                for(int k = 0; k < Settings.nReplications; ++k){
-                    mapTask.hdfsHost[k] = dfs.get(k);
-                }
+//                Collections.shuffle(dfs, Settings.r);
+//                mapTask.hdfsHost = new int[Settings.nReplications];
+//                for(int k = 0; k < Settings.nReplications; ++k){
+//                    mapTask.hdfsHost[k] = dfs.get(k);
+//                }
                 job.pendingMapperList.add(mapTask);
             }
             job.nMappers = nRealMappers;

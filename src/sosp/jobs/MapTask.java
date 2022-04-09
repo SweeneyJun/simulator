@@ -8,14 +8,15 @@ public class MapTask extends Task{
 	public int[] hdfsHost = null;
 	
 	// runtime constants (modified by only once)
-//	public int host = -1;
-//	public double startTime = -1;
+
 	public double finishTime = -1;
 	public double predictComputationDelay = 0;
 
 	public double inputSize = -1;
 	public double inputFinishTime = -1;  // TODO 区分当前MapTask是否该运行? 如果在Input结束直接调用运行的话好像用不着这个变量, 先留着看吧
 	public double allocatedInputBw = -1; // 结束Input阶段以后归还使用
+	public double inputStartTime = -1;
+	public double predictInputTime = -1;
 	
 	public MapTask(Job parents, int id){
 		_job = parents;

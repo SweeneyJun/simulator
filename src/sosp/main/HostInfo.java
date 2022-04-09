@@ -23,7 +23,7 @@ public class HostInfo {
         if(hostId < Settings.nHosts) {
             this.freeSlots = Settings.nSlots;
         }
-        else if(hostId >= Settings.nHosts && hostId < Settings.nStorageHosts){
+        else if(hostId >= Settings.nHosts){
             this.freeSlots = 0;
         }
         else{
