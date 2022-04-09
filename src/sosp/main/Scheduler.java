@@ -152,7 +152,7 @@ public class Scheduler {
 			while(Job.nArrivedJobs<jobs.length && jobs[Job.nArrivedJobs].arriveTime <= time){
 				Job job = jobs[Job.nArrivedJobs++];
 				Coflow coflow = job.coflow;
-				coflow.start(time);
+				coflow.start(time); // 这个行为是错的, 不应该在这里开始coflow
 				if (activeJobs.size() < parallelism) {
 					activeJobs.add(job);
 					job.jobQueue.activeJobs.add(job);
@@ -410,7 +410,7 @@ public class Scheduler {
 				for(Flow flow:mf.flows){
 					if(flow.finishTime>=0)
 						continue;
-					step = Math.min(step, flow.size - flow.sentSize);
+					step = Math.min(step, flow.size - flow.sentSize); // wcx: flow.size是MapStage结束后算出来的, 在4.1 部分
 				}
 			}else{
 				assert(reducer.computationFinishTime<0);

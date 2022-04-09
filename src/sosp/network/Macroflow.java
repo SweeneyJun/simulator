@@ -34,7 +34,7 @@ public class Macroflow {
 		for(int i=0;i<Settings.nHosts;++i){
 			Flow flow = flows[i];
 			// normalized
-			flow.size = size * _coflow._job.emittedMapperList[i].size() / totalMappers;
+			flow.size = size * _coflow._job.emittedMapperList[i].size() / totalMappers; // 计算方法是Macroflow的size乘以该机器上已经部署正在运行的mapper的个数除以总mapper的数量
 		}
 	}
 	
