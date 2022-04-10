@@ -97,6 +97,9 @@ public class SeparateTraffic {
             // map-tasks
             job.pendingMapperList = new ArrayList<MapTask>();
             job.emittedMapperList = new ArrayList[Settings.nHosts];
+            for(int i = 0; i < Settings.nHosts; ++i){
+                job.emittedMapperList[i] = new ArrayList<MapTask>();
+            }
 
             double jobSize; // 看起来是, 若输出中给出的reducer数量不为0, 则会给出MacroFlow的size进而给出Coflow的size, 就用这个coflowSize作为jobSize
             if (reducers != 0) {
@@ -144,6 +147,7 @@ public class SeparateTraffic {
             if(Math.abs(Settings.sizeEstimationError-1)>Settings.epsilon)
                 job.estimatedRunningTime *= Math.pow(Settings.sizeEstimationError, 1-2*error.nextDouble());
             jobs[jobId++] = job; // 此job处理完毕, 编号递增
+            // System.out.printf("Read jobID: %d from log file\n", jobId-1);
         }
         cin.close();
         System.out.println("i: "+ ii);

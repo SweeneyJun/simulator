@@ -35,9 +35,9 @@ public class DoubleFIFO implements  Algorithm {
     @Override
     public ArrayList<Flow>[] getPriority() {
         if(Settings.nPriorities>0)
-            return Priority.HybridPriority(hybrid?(Scheduler.countFreestHost_const()>0?1:0):weight);
+            return Priority.HybridPriority(hybrid?(SeparateScheduler.countFreestHost_const()>0?1:0):weight);
         else
-            return hybrid? (Scheduler.countFreestHost_const()>0?Priority.infinitePrioritiesCoflow():Priority.infinitePrioritiesMf())
+            return hybrid? (SeparateScheduler.countFreestHost_const()>0?Priority.infinitePrioritiesCoflow():Priority.infinitePrioritiesMf())
                     : (weight>0?Priority.infinitePrioritiesCoflow():Priority.infinitePrioritiesMf());
     }
 
@@ -51,13 +51,19 @@ public class DoubleFIFO implements  Algorithm {
     public HostAndTask allocateHostAndTask() {
         assert(Settings.isSeparate); // 只有存算分离场景下可以调用这个调度算法
         // check FreeBw
-        SeparateScheduler.totalFreeBw = Arrays.stream(SeparateScheduler.freeBw).sum();
+        SeparateScheduler.totalFreeBw = 0;
+        for(int i = 0; i < Settings.nHosts; ++i){
+            SeparateScheduler.totalFreeBw += SeparateScheduler.freeBw[i];
+        }
         if(SeparateScheduler.totalFreeBw == 0){
             return null;
         }
 
         // check host
-        int num = Arrays.stream(SeparateScheduler.freeSlots).sum();
+        int num = 0;
+        for(int i = 0; i < Settings.nHosts; ++i){
+            num += SeparateScheduler.freeSlots[i];
+        }
         if(num == 0){
             return null;
         }
@@ -94,7 +100,7 @@ public class DoubleFIFO implements  Algorithm {
             }
             chosenComputeHost = (chosenComputeHost < 0) ? i : chosenComputeHost;
             if(chosenJob.mapStageFinishTime < 0){
-                if (SeparateScheduler.freeBw[chosenComputeHost] < SeparateScheduler.freeSlots[i]) {
+                if (SeparateScheduler.freeBw[chosenComputeHost] < SeparateScheduler.freeBw[i]) {
                     chosenComputeHost = i;
                 }
             }

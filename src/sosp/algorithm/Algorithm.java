@@ -10,6 +10,7 @@ import sosp.jobs.JobQueue;
 import sosp.jobs.MapTask;
 import sosp.jobs.Task;
 import sosp.main.Scheduler;
+import sosp.main.SeparateScheduler;
 import sosp.main.Settings;
 import sosp.network.Flow;
 
@@ -41,21 +42,13 @@ public interface Algorithm {
 	// choose a least load job to place a map task on its locality host
 	public static Job fairJobSelector(){
 		Job chosenJob = null;
-		for(Job job:Scheduler.activeJobs){ // find an active job with un-emitted reducers
+		for(Job job:SeparateScheduler.activeJobs){ // find an active job with un-emitted reducers
 			// check mapper task and reducer task
 			if(!job.hasPendingTasks_const())
 				continue; // no pending tasks
 			if(!job.hasPendingMappers_const() && job.mapStageFinishTime<0)
 				continue; // no pending mappers but not all mappers finished 
-			if(job.hasPendingMappers_const()){
-				boolean hostFree = false;
-				for(MapTask mt:job.pendingMapperList) {
-					for(int i=0;i<mt.hdfsHost.length;++i)
-						hostFree = hostFree || (Scheduler.freeSlots[mt.hdfsHost[i]]>0);
-					if(hostFree) break;
-				}
-				if(!hostFree)
-					continue; // job in map-stage, but corresponding HDFS hosts have no slot
+			if(job.notInputMapperList.size() > 0){
 			}
 			if(chosenJob==null || job.nActiveTasks_const() < chosenJob.nActiveTasks_const())
 				chosenJob = job;
@@ -66,7 +59,7 @@ public interface Algorithm {
 	public static Job jobSelector(){
 
 		ArrayList<JobQueue> jobQueues = new ArrayList<>();
-		jobQueues = Scheduler.jobQueues;
+		jobQueues = SeparateScheduler.jobQueues;
 
 		Collections.sort(jobQueues, new Comparator<JobQueue>() {
 			@Override
@@ -75,7 +68,7 @@ public interface Algorithm {
 			}
 		});
 
-		for (JobQueue jobQueue: Scheduler.jobQueues) {
+		for (JobQueue jobQueue: SeparateScheduler.jobQueues) {
 			if (1.0*jobQueue.nActiveTasks()/Settings.nSlots/Settings.nHosts > jobQueue.maxResource) {
 				continue;
 			}
@@ -91,7 +84,7 @@ public interface Algorithm {
 					boolean hostFree = false;
 					for (MapTask mt : job.pendingMapperList) {
 						for (int i = 0; i < mt.hdfsHost.length; ++i)
-							hostFree = hostFree || (Scheduler.freeSlots[mt.hdfsHost[i]] > 0);
+							hostFree = hostFree || (SeparateScheduler.freeSlots[mt.hdfsHost[i]] > 0);
 						if (hostFree) break;
 					}
 					if (!hostFree)
@@ -119,7 +112,7 @@ public interface Algorithm {
 	// return the number of job that haven't finish its map phase
 	public static int countJobWithReadyTasks() {
 		int n=0;
-		for(Job job:Scheduler.activeJobs){ // find an active job with un-emitted reducers
+		for(Job job:SeparateScheduler.activeJobs){ // find an active job with un-emitted reducers
 			if(!job.hasPendingTasks_const())
 				continue; // no pending tasks
 			if(!job.hasPendingMappers_const() && job.mapStageFinishTime<0)
@@ -131,7 +124,7 @@ public interface Algorithm {
 
 	// sort job according to its estimated running time
 	public static Job[] jobSorter(){
-		Job[] jobs = Scheduler.activeJobs.toArray(new Job[0]);
+		Job[] jobs = SeparateScheduler.activeJobs.toArray(new Job[0]);
 		Arrays.sort(jobs, new Comparator<Job>(){
 			@Override public int compare(Job arg0, Job arg1) {
 				double a = arg0.estimatedRunningTime - arg1.estimatedRunningTime;
@@ -143,7 +136,7 @@ public interface Algorithm {
 
 	// sort job according to its number of active tasks
 	public static Job[] jobSorterFair(){
-		Job[] jobs = Scheduler.activeJobs.toArray(new Job[0]);
+		Job[] jobs = SeparateScheduler.activeJobs.toArray(new Job[0]);
 		Arrays.sort(jobs, new Comparator<Job>(){
 			@Override public int compare(Job arg0, Job arg1) {
 //				if (arg0.nActiveTasks_const() != arg1.nActiveTasks_const()) {
@@ -158,7 +151,7 @@ public interface Algorithm {
 	}
 
 	public static Job[] jobSorterFifo() {
-		Job[] jobs = Scheduler.activeJobs.toArray(new Job[0]);
+		Job[] jobs = SeparateScheduler.activeJobs.toArray(new Job[0]);
 		Arrays.sort(jobs, new Comparator<Job>(){
 			@Override public int compare(Job arg0, Job arg1) {
 				return arg0.jobId - arg1.jobId;
@@ -168,7 +161,7 @@ public interface Algorithm {
 	}
 
 	public static Job[] jobSorterSJF() {
-		Job[] jobs = Scheduler.activeJobs.toArray(new Job[0]);
+		Job[] jobs = SeparateScheduler.activeJobs.toArray(new Job[0]);
 		Arrays.sort(jobs, new Comparator<Job>(){
 			@Override public int compare(Job arg0, Job arg1) {
 				return Double.compare(arg0.coflow.size, arg1.coflow.size);
@@ -185,7 +178,7 @@ public interface Algorithm {
 		//int host = -1;
 		for(MapTask mt: job.pendingMapperList) {
 			for(int i=0;i<mt.hdfsHost.length;++i) 
-				if(Scheduler.freeSlots[mt.hdfsHost[i]]>0) 
+				if(SeparateScheduler.freeSlots[mt.hdfsHost[i]]>0)
 					return new HostAndTask(mt.hdfsHost[i], mt);
 		}
 		assert(false);
@@ -204,7 +197,7 @@ public interface Algorithm {
 				boolean hostFree = false;
 				for(MapTask mt:job.pendingMapperList) {
 					for(int i=0;i<mt.hdfsHost.length;++i)
-						hostFree = hostFree || (Scheduler.freeSlots[mt.hdfsHost[i]]>0);
+						hostFree = hostFree || (SeparateScheduler.freeSlots[mt.hdfsHost[i]]>0);
 					if(hostFree) break;
 				}
 				if(!hostFree)
@@ -227,7 +220,7 @@ public interface Algorithm {
 				boolean hostFree = false;
 				for(MapTask mt:job.pendingMapperList) {
 					for(int i=0;i<mt.hdfsHost.length;++i)
-						hostFree = hostFree || (Scheduler.freeSlots[mt.hdfsHost[i]]>0);
+						hostFree = hostFree || (SeparateScheduler.freeSlots[mt.hdfsHost[i]]>0);
 					if(hostFree) break;
 				}
 				if(!hostFree)
@@ -240,7 +233,7 @@ public interface Algorithm {
 
 //	public static boolean networkIsFull() {
 //		int sum = 0;
-//		for(int num: Scheduler.shuffleReducerNum) {
+//		for(int num: SeparateScheduler.shuffleReducerNum) {
 //			sum += num;
 //		}
 //		return sum == 3*Settings.nHosts;

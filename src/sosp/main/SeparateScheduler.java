@@ -98,23 +98,26 @@ public class SeparateScheduler{
     private static void initialize() throws FileNotFoundException{
         jobs = SeparateTraffic.loadFromFile("FB2010-1Hr-150-0.txt");
         freeSlots = new int[Settings.nHosts];
-        for(int i = 0; i < Settings.nHosts; ++i) {
+        for(int i = 0; i < freeSlots.length; ++i) {
             freeSlots[i] = Settings.nSlots;
         }
-
-        freeBw = Topology.getLinkBw(); // 让Scheduler知道各个机器的带宽情况以便后续MapInput阶段调度使用
-        totalFreeBw = Arrays.stream(freeBw).sum();
-        switchFreeBw = Settings.switchBottleFreeBw;
-
-        System.out.printf("TotalFreeBw: %d\n", totalFreeBw);
 
         if(Settings.isGaintSwitch)
             Topology.loadGaint();
         else
             Topology.loadTwoLayer();
 
-
         Topology.loadSeparateGaint();
+        freeBw = Topology.getLinkBw(); // 让Scheduler知道各个机器的带宽情况以便后续MapInput阶段调度使用
+        totalFreeBw = 0;
+        for(int i = 0; i < Settings.nHosts; ++i){
+            totalFreeBw += freeBw[i];
+        }
+
+        switchFreeBw = Settings.switchBottleFreeBw;
+
+        System.out.printf("TotalFreeBw: %f\n", totalFreeBw);
+
 
         throughput = Measurement.newThroughput();
         // record the slot using ratio during the schedule
@@ -144,12 +147,14 @@ public class SeparateScheduler{
 
                 if(activeJobs.size() < parallelism){
                     activeJobs.add(job);
+                    job.jobQueue.activeJobs.add(job);
                 }
                 else{
                     pendingJobs.add(job);
                 }
                 System.out.printf("%.3f job %d started\n", time, job.jobId);
 
+                job.notInputMapperList = new ArrayList<MapTask>();
                 for(int i = 0; i < job.nMappers; i++){
                     job.notInputMapperList.add(job.pendingMapperList.get(i)); // 供调度算法选择的还未Input的MapTask
                 }
@@ -226,12 +231,13 @@ public class SeparateScheduler{
             ArrayList<Flow>[] activeFlows =  Settings.algo.getPriority();
 
             // get Link Bandwidth
-            freeBw = Topology.getLinkBw();
+//            freeBw = Topology.getLinkBw();
             // work conservation
             MaxMin.getMaxMin(activeFlows, freeBw);
             double step = getSimulationSteps_const();
             Measurement.measureThroughput(throughput, freeBw, time, step);
             slot.add(1-nFreeSlotsRatio);
+            time += step; // update current time
             for(ArrayList<Flow> flows:activeFlows){
                 for(Flow flow:flows){
 //					System.out.println(flow._macroflow._reducer.host + ":" + leastShuffleSize[flow._macroflow._reducer.host]);
@@ -271,6 +277,15 @@ public class SeparateScheduler{
                         mapper._job.oneMapperFinished();
                         if(mapper._job.isAllMapperFinished_const())
                             mapper._job.mapStageFinish(time);
+                            mapper._job.coflow.start(time); // coflow应该放在这里开始计时
+
+                            double tempSum = 0;
+                            for(int i = 0; i < Settings.nHosts; ++i){ // 只计算下载带宽
+                                tempSum += freeBw[i];
+                            }
+                            assert(tempSum == totalFreeBw);
+                            assert(tempSum == Settings.speed * Settings.nHosts);
+
                         Settings.algo.releaseHost(new HostAndTask(mapper.host,mapper));
 //						scheduleOut.println(time+" [M] "+ mapper._job.jobId+"@"+mapper.mapperId +" finishes");
                         itm.remove();
@@ -389,7 +404,7 @@ public class SeparateScheduler{
         for(MapTask mapper:InputMappers){
             assert (mapper.inputFinishTime < 0);
             double remainingTrans = mapper.inputStartTime + mapper.predictInputTime - time;
-            System.out.printf("remainingTrans: %d\n", remainingTrans);
+            System.out.printf("remainingTrans: %f\n", remainingTrans);
             assert (remainingTrans >= 0);
             step = Math.min(step, remainingTrans);
             if(step<=Settings.minTimeStep)
