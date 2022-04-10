@@ -68,7 +68,7 @@ public class Job {
 	public void oneMapperBeginInput(int host, MapTask mapper){
 		++nInputMappers;
 		SeparateScheduler.InputMappers.add(mapper); // 在步骤4仿照原Scheduler 4.1 和 4.2部分用迭代器移除
-		notInputMapperList.remove(mapper);
+		assert(notInputMapperList.remove(mapper)); // java默认禁用assert, 要开启-ea参数
 		double allocatedBw = Math.min(SeparateScheduler.switchFreeBw, SeparateScheduler.freeBw[host]);
 		SeparateScheduler.switchFreeBw -= allocatedBw;
 		SeparateScheduler.freeBw[host] -= allocatedBw;
@@ -93,7 +93,7 @@ public class Job {
 	
 	public void oneMapperStarted(int host, MapTask mapper){
 		++nActiveMappers;
-		assert(pendingMapperList.remove(mapper));
+		assert(pendingMapperList.remove(mapper)); // 为什么assert(pendingMapperList.remove(mapper))在这个场景中没效果了? answer: java默认禁用assert, 要开启-ea参数
 		//for(int i=0;i<Settings.nReplications;++i){
 		//	if(hdfsHosts[i]==host){
 				emittedMapperList[host].add(mapper);
@@ -109,7 +109,7 @@ public class Job {
 	
 	public void oneReducerStarted(int host, ReduceTask reducer){
 		++nActiveReducers;
-		assert(pendingReducerList.remove(reducer));
+		assert(pendingReducerList.remove(reducer)); // assert(pendingReducerList.remove(reducer))为什么没用了! answer: java默认禁用assert, 要开启-ea参数
 		emittedReducerList.add(reducer);
 	}
 	

@@ -48,7 +48,7 @@ public class SeparateScheduler{
 
         Measurement.tic(); // 系统当前时间
         Settings.loadFromFile("config.ini", args);
-        assert(Settings.isSeparate); // 非存算分离场景下不应该运行这个类
+        assert(Settings.isSeparate == true); // 非存算分离场景下不应该运行这个类
         initialize();
 
         simulate();
@@ -420,14 +420,20 @@ public class SeparateScheduler{
                 return Settings.minTimeStep;
         }
         for(ReduceTask reducer:activeReducers){
-            if(reducer.networkFinishTime<0){
+            if(reducer.networkFinishTime<0) {
+
                 Macroflow mf = reducer.macroflow;
-                for(Flow flow:mf.flows){
-                    if(flow.finishTime>=0)
+                for (Flow flow : mf.flows) {
+                    if (flow.finishTime >= 0)
                         continue;
                     step = Math.min(step, flow.size - flow.sentSize);
+                    if (mf.isAllFlowsFinished_const()) {
+                        mf.finish(time); // 如果reducer和mapper被部署在一个节点上, 这里就不会生成流, 会直接结束, 原代码好像没有处理这种conner case
+                        reducer.networkFinished(time);
+                    }
                 }
-            }else{
+            }
+            else{
                 assert(reducer.computationFinishTime<0);
                 double remainingComp = reducer.networkFinishTime + reducer.computationDelay - time;
                 assert(remainingComp>0);
