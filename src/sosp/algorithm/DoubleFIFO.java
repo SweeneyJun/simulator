@@ -51,11 +51,12 @@ public class DoubleFIFO implements  Algorithm {
     public HostAndTask allocateHostAndTask() {
         assert(Settings.isSeparate); // 只有存算分离场景下可以调用这个调度算法
         // check FreeBw
+        // 4.11: check HostBw的同时别忘了Check SwitchBw!
         SeparateScheduler.totalFreeBw = 0;
-        for(int i = 0; i < Settings.nHosts; ++i){
+        for(int i = 0; i < SeparateScheduler.freeBw.length; ++i){
             SeparateScheduler.totalFreeBw += SeparateScheduler.freeBw[i];
         }
-        if(SeparateScheduler.totalFreeBw == 0){
+        if(SeparateScheduler.totalFreeBw == 0 || SeparateScheduler.switchFreeBw == 0){
             return null;
         }
 
@@ -100,11 +101,18 @@ public class DoubleFIFO implements  Algorithm {
             }
             chosenComputeHost = (chosenComputeHost < 0) ? i : chosenComputeHost;
             if(chosenJob.mapStageFinishTime < 0){
+                if (SeparateScheduler.freeSlots[chosenComputeHost] == 0){
+                    continue; // 4.11: 虽然MapInput阶段以带宽为优先目标, 但要警惕有带宽无Slot的情况!
+                }
                 if (SeparateScheduler.freeBw[chosenComputeHost] < SeparateScheduler.freeBw[i]) {
                     chosenComputeHost = i;
                 }
             }
             else{
+                if (SeparateScheduler.freeBw[chosenComputeHost] < Settings.epsilon || SeparateScheduler.freeBw[Settings.nHosts + chosenComputeHost] < Settings.epsilon){
+                    continue; // 4.11: 虽然Reduce阶段以freeSlot为优先目标, 但要警惕有Slot无带宽的情况
+                    // 上下行带宽同时check
+                }
                 if (SeparateScheduler.freeSlots[chosenComputeHost] < SeparateScheduler.freeSlots[i]){
                     chosenComputeHost = i;
                 }

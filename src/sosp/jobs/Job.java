@@ -1,5 +1,6 @@
 package sosp.jobs;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Map;
@@ -69,6 +70,8 @@ public class Job {
 		++nInputMappers;
 		SeparateScheduler.InputMappers.add(mapper); // 在步骤4仿照原Scheduler 4.1 和 4.2部分用迭代器移除
 		assert(notInputMapperList.remove(mapper)); // java默认禁用assert, 要开启-ea参数
+		assert(SeparateScheduler.switchFreeBw > Settings.epsilon);
+		assert(SeparateScheduler.freeBw[host] > Settings.epsilon);
 		double allocatedBw = Math.min(SeparateScheduler.switchFreeBw, SeparateScheduler.freeBw[host]);
 		SeparateScheduler.switchFreeBw -= allocatedBw;
 		SeparateScheduler.freeBw[host] -= allocatedBw;
@@ -78,12 +81,17 @@ public class Job {
 
 		mapper.inputStartTime = SeparateScheduler.time;
 		mapper.predictInputTime = mapper.inputSize / mapper.allocatedInputBw;
+
+		BigDecimal bd = new BigDecimal(mapper.predictInputTime);
+		mapper.predictInputTime = bd.setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 	}
 	public void oneMapperEndInput(int host, MapTask mapper){ // TODO Input结束时是否应该开始运行行为? 即原Scheduler Simulator函数里调用oneMapperStarted(ht.host, mapper)的行为, 还是另写过程, 等待思考
 		--nInputMappers;
 		SeparateScheduler.switchFreeBw += mapper.allocatedInputBw;
 		SeparateScheduler.freeBw[host] += mapper.allocatedInputBw;
 		SeparateScheduler.totalFreeBw += mapper.allocatedInputBw;
+
+		mapper.inputFinishTime = SeparateScheduler.time; // 一个mapper只有在input阶段结束后才可以开始计算
 
 		// begin Running
 		mapper._job.oneMapperStarted(host, mapper);

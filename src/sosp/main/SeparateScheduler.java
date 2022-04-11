@@ -24,6 +24,7 @@ public class SeparateScheduler{
     public static double[] freeBw = null;
     public static double totalFreeBw = -1;
     public static double switchFreeBw = -1;
+    public static int debugCount = 0;
 
     public static ArrayList<Job> activeJobs = new ArrayList<Job>(); // arrived and not finished coflows
     public static ArrayList<Job> pendingJobs = new ArrayList<Job>(); // arrived and not finished coflows
@@ -110,7 +111,7 @@ public class SeparateScheduler{
         Topology.loadSeparateGaint();
         freeBw = Topology.getLinkBw(); // 让Scheduler知道各个机器的带宽情况以便后续MapInput阶段调度使用
         totalFreeBw = 0;
-        for(int i = 0; i < Settings.nHosts; ++i){
+        for(int i = 0; i < Settings.nHosts * 2; ++i){
             totalFreeBw += freeBw[i];
         }
 
@@ -142,6 +143,8 @@ public class SeparateScheduler{
         int nFinishedJobs = 0;
         while(nFinishedJobs < jobs.length){ // 条件成立说明还有没完成的job
             while(Job.nArrivedJobs < jobs.length && jobs[Job.nArrivedJobs].arriveTime <= time + Settings.epsilon){ // 还有可以到来的job, 以及模拟时间追上到达时间时才可以开始调度该job
+                debugCount = 0;
+
                 Job job = jobs[Job.nArrivedJobs++];
                 Coflow coflow = job.coflow;
 
@@ -246,6 +249,15 @@ public class SeparateScheduler{
 //					assert (leastShuffleSize[flow._macroflow._reducer.host] >= flow._macroflow.size * step * -1);
                     if(flow.sentSize + Settings.epsilon > flow.size) // gt, not ge
                         flow.Finish(time);
+
+                        // wcx: 在去掉了阶段3的 freeBw = Topology.getLinkBw();这句后, 带宽情况不能作为一次性情况每次获取了, 而是得由SeparateScheduler全局管理
+                        // 所以这里每当一个flow结束了以后我们需要归还该flow所占用的带宽
+                        for(int node: flow.route){
+                            freeBw[node] += flow.allocatedBw;
+                            totalFreeBw += flow.allocatedBw;
+                        }
+
+
                 }
             }
 
@@ -269,23 +281,27 @@ public class SeparateScheduler{
             itm = activeMappers.iterator();
             while(itm.hasNext()){
                 MapTask mapper = itm.next();
-                if(mapper.finishTime<0){
+                if(mapper.finishTime < 0 && mapper.inputFinishTime > 0){
                     if(mapper.startTime + mapper.computationDelay < time + Settings.epsilon){
                         ++freeSlots[mapper.host];
                         hostInfos[mapper.host].freeSlots ++;
                         mapper.finish(time);
                         mapper._job.oneMapperFinished();
-                        if(mapper._job.isAllMapperFinished_const())
+                        if(mapper._job.isAllMapperFinished_const()) {
                             mapper._job.mapStageFinish(time);
                             mapper._job.coflow.start(time); // coflow应该放在这里开始计时
 
                             double tempSum = 0;
-                            for(int i = 0; i < Settings.nHosts; ++i){ // 只计算下载带宽
+                            for (int i = 0; i < SeparateScheduler.freeBw.length; ++i) { // 原来只想统计下载带宽, 但是考虑到map之前可能有上一个job的reduce阶段占用了上传带宽没有归还, 这里还是统计一下下载和上传所有带宽吧
                                 tempSum += freeBw[i];
                             }
-                            assert(tempSum == totalFreeBw);
-                            assert(tempSum == Settings.speed * Settings.nHosts);
-
+//                            try {
+                            assert (tempSum == totalFreeBw);
+                            assert (tempSum == Settings.speed * Settings.nHosts * 2);
+//                            }catch(AssertionError e){
+//                                System.out.printf("tempSum: %f, totalFreeBw: %f, freeBw: %s", tempSum, totalFreeBw, Arrays.toString(freeBw));
+//                            }
+                        }
                         Settings.algo.releaseHost(new HostAndTask(mapper.host,mapper));
 //						scheduleOut.println(time+" [M] "+ mapper._job.jobId+"@"+mapper.mapperId +" finishes");
                         itm.remove();
@@ -400,11 +416,11 @@ public class SeparateScheduler{
 
     private static double getSimulationSteps_const(){
         double step = Math.max(Settings.minTimeStep, getNextArrivalTime_const() - time);
-        int flag = 0;
         for(MapTask mapper:InputMappers){
+            debugCount += 1;
             assert (mapper.inputFinishTime < 0);
             double remainingTrans = mapper.inputStartTime + mapper.predictInputTime - time;
-            System.out.printf("remainingTrans: %f\n", remainingTrans);
+            System.out.printf("remainingTrans: %f Count: %d\n", remainingTrans, debugCount);
             assert (remainingTrans >= 0);
             step = Math.min(step, remainingTrans);
             if(step<=Settings.minTimeStep)
@@ -427,10 +443,12 @@ public class SeparateScheduler{
                     if (flow.finishTime >= 0)
                         continue;
                     step = Math.min(step, flow.size - flow.sentSize);
-                    if (mf.isAllFlowsFinished_const()) {
-                        mf.finish(time); // 如果reducer和mapper被部署在一个节点上, 这里就不会生成流, 会直接结束, 原代码好像没有处理这种conner case
-                        reducer.networkFinished(time);
-                    }
+                }
+                if (mf.isAllFlowsFinished_const()) {
+//                    mf.finish(time); // 如果reducer和mapper被部署在一个节点上, 这里就不会生成流, 会直接结束, 原代码好像没有处理这种conner case
+//                    reducer.networkFinished(time);
+                    step = 0;
+                    return step; // conner case: reducer和mapper位于同一个机器, 没生成流, 则流的结束时间就是当前时间, 此时不能迈步子, 要原地踏步一下交给Simulate中4.3去完结Network阶段
                 }
             }
             else{
