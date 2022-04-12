@@ -104,7 +104,7 @@ public class Scheduler {
 	
 	
 	private static void initialize() throws FileNotFoundException {
-		jobs = Traffic.loadFromFile("FB2010-1Hr-150-0.txt");
+		jobs = Traffic.loadFromFile("FB2010-1Hr-150-0_local.txt");
 		//jobs = Traffic.loadFromFile("testbed-toy.txt");
 		//jobs = Traffic.loadFromFile("neat.txt");
 		//jobs = Traffic.loadFromFile("neat-executing-time.txt");
@@ -320,7 +320,7 @@ public class Scheduler {
 						++freeSlots[reducer.host];
 						hostInfos[reducer.host].freeSlots ++;
 						reducer.computationFinished(time);
-						reducer._job.oneReducerFinished();
+						reducer._job.oneReducerFinished(reducer);
 						Settings.algo.releaseHost(new HostAndTask(reducer.host,reducer));
 //						scheduleOut.println(time+" [R] "+ reducer._job.jobId+"@"+reducer.reducerId +" finishes");
 						itr.remove();

@@ -2,6 +2,7 @@ package sosp.jobs;
 
 import java.util.ArrayList;
 
+import sosp.main.Scheduler;
 import sosp.main.Settings;
 import sosp.network.Coflow;
 import sosp.network.Macroflow;
@@ -78,16 +79,19 @@ public class Job {
 		++nActiveReducers;
 		assert(pendingReducerList.remove(reducer));
 		emittedReducerList.add(reducer);
+		System.out.printf("reducer %d of job %d start at time %f\n", reducer.reducerId, jobId, Scheduler.time);
 	}
 	
-	public void oneReducerFinished(){
+	public void oneReducerFinished(ReduceTask reducer){
 		--nActiveReducers;
+		System.out.printf("reducer %d of job %d finish at time %f\n", reducer.reducerId, jobId, Scheduler.time);
 	}
 	
 	public void mapStageFinish(double time){
 		mapStageFinishTime = time;
 		for(Macroflow mf:coflow.macroflows)
 			mf.setFlowSize();
+		System.out.printf("job %d's mapStage finish at time %f\n", jobId, time);
 	}
 	
 	public void reduceStageFinish(double time){
