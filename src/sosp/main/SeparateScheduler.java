@@ -247,16 +247,16 @@ public class SeparateScheduler{
                     flow.sentSize += flow.allocatedBw * step;
 //					leastShuffleSize[flow._macroflow._reducer.host] -= flow.allocatedBw * step;
 //					assert (leastShuffleSize[flow._macroflow._reducer.host] >= flow._macroflow.size * step * -1);
-                    if(flow.sentSize + Settings.epsilon > flow.size) // gt, not ge
+                    if(flow.sentSize + Settings.epsilon > flow.size) { // gt, not ge
                         flow.Finish(time);
 
                         // wcx: 在去掉了阶段3的 freeBw = Topology.getLinkBw();这句后, 带宽情况不能作为一次性情况每次获取了, 而是得由SeparateScheduler全局管理
                         // 所以这里每当一个flow结束了以后我们需要归还该flow所占用的带宽
-                        for(int node: flow.route){
+                        for (int node : flow.route) {
                             freeBw[node] += flow.allocatedBw;
                             totalFreeBw += flow.allocatedBw;
                         }
-
+                    }
 
                 }
             }
@@ -295,12 +295,11 @@ public class SeparateScheduler{
                             for (int i = 0; i < SeparateScheduler.freeBw.length; ++i) { // 原来只想统计下载带宽, 但是考虑到map之前可能有上一个job的reduce阶段占用了上传带宽没有归还, 这里还是统计一下下载和上传所有带宽吧
                                 tempSum += freeBw[i];
                             }
-//                            try {
-                            assert (tempSum == totalFreeBw);
-                            assert (tempSum == Settings.speed * Settings.nHosts * 2);
-//                            }catch(AssertionError e){
-//                                System.out.printf("tempSum: %f, totalFreeBw: %f, freeBw: %s", tempSum, totalFreeBw, Arrays.toString(freeBw));
-//                            }
+                            if(activeJobs.size() == 1) {
+                                assert (tempSum == totalFreeBw); // 这里这个assert似乎是不对的, 因为如果此时有很多job的同时运行的话，一个job的mapStage结束后其他job的mapper仍在占用带宽传输!
+                                assert (tempSum == Settings.speed * Settings.nHosts * 2);
+                            }
+
                         }
                         Settings.algo.releaseHost(new HostAndTask(mapper.host,mapper));
 //						scheduleOut.println(time+" [M] "+ mapper._job.jobId+"@"+mapper.mapperId +" finishes");
@@ -420,7 +419,7 @@ public class SeparateScheduler{
             debugCount += 1;
             assert (mapper.inputFinishTime < 0);
             double remainingTrans = mapper.inputStartTime + mapper.predictInputTime - time;
-            System.out.printf("remainingTrans: %f Count: %d\n", remainingTrans, debugCount);
+            // System.out.printf("remainingTrans: %f Count: %d\n", remainingTrans, debugCount);
             assert (remainingTrans >= 0);
             step = Math.min(step, remainingTrans);
             if(step<=Settings.minTimeStep)
