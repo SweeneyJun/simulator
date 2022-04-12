@@ -54,9 +54,18 @@ public class DoubleFIFO implements  Algorithm {
         // 4.11: check HostBw的同时别忘了Check SwitchBw!
         SeparateScheduler.totalFreeBw = 0;
         for(int i = 0; i < SeparateScheduler.freeBw.length; ++i){
+            if(SeparateScheduler.freeBw[i] < Settings.epsilon){
+                SeparateScheduler.freeBw[i] = 0;
+            }
             SeparateScheduler.totalFreeBw += SeparateScheduler.freeBw[i];
         }
-        if(SeparateScheduler.totalFreeBw == 0 || SeparateScheduler.switchFreeBw == 0){
+        if(SeparateScheduler.totalFreeBw < Settings.epsilon || SeparateScheduler.switchFreeBw < Settings.epsilon){
+            if(SeparateScheduler.totalFreeBw < Settings.epsilon){
+                SeparateScheduler.totalFreeBw = 0;
+            }
+            else{
+                SeparateScheduler.switchFreeBw = 0;
+            }
             return null;
         }
 
@@ -96,12 +105,9 @@ public class DoubleFIFO implements  Algorithm {
         // choose the ComputeHost with most freeSlot
         int chosenComputeHost = -1;
         for (int i = 0; i < Settings.nHosts; ++i) {
-            if (SeparateScheduler.freeSlots[i] == 0) {
-                continue;
-            }
             chosenComputeHost = (chosenComputeHost < 0) ? i : chosenComputeHost;
             if(chosenJob.mapStageFinishTime < 0){
-                if (SeparateScheduler.freeSlots[chosenComputeHost] == 0){
+                if (SeparateScheduler.freeSlots[i] == 0){
                     continue; // 4.11: 虽然MapInput阶段以带宽为优先目标, 但要警惕有带宽无Slot的情况!
                 }
                 if (SeparateScheduler.freeBw[chosenComputeHost] < SeparateScheduler.freeBw[i]) {
@@ -109,7 +115,7 @@ public class DoubleFIFO implements  Algorithm {
                 }
             }
             else{
-                if (SeparateScheduler.freeBw[chosenComputeHost] < Settings.epsilon || SeparateScheduler.freeBw[Settings.nHosts + chosenComputeHost] < Settings.epsilon){
+                if (SeparateScheduler.freeBw[i] < Settings.epsilon || SeparateScheduler.freeBw[Settings.nHosts + i] < Settings.epsilon){
                     continue; // 4.11: 虽然Reduce阶段以freeSlot为优先目标, 但要警惕有Slot无带宽的情况
                     // 上下行带宽同时check
                 }
@@ -121,12 +127,20 @@ public class DoubleFIFO implements  Algorithm {
 
         if(chosenJob.mapStageFinishTime < 0) { // 分配MapTask
             assert(chosenJob.notInputMapperList.size() > 0);
-            assert (chosenComputeHost >= 0); // 前面已经检查过是否有freeSlot以及freeBw, 如果逻辑正确这里不应该找不到计算节点
+            assert (chosenComputeHost >= 0); // 前面已经检查过是否有freeSlot以及freeBw, 如果逻辑正确这里不应该找不到计算节点 .. 4.11: 这里确实会找到计算结点, 但是在极端情况下这个计算结点可能无效!
+            // 极端情况是指, 有freeSlot的host没freeBw, 有freeBw的host无freeSlot, 这种host能躲避前面的check, 最终从在找不到合适host的循环中返回一个初始化的值, 即host=0, 然后在这里导入错误, 所以这里还要检查
+            if(SeparateScheduler.freeBw[chosenComputeHost] < Settings.epsilon){
+                SeparateScheduler.freeBw[chosenComputeHost] = 0;
+                return null; // 二次防卫!
+            }
             chosenTask = chosenJob.notInputMapperList.get(0);
         }
         else{ // 分配ReduceTask
             assert (chosenJob.hasPendingTasks_const());
             assert (chosenComputeHost >= 0);
+            if(SeparateScheduler.freeSlots[chosenComputeHost] == 0){
+                return null; // 二次防卫!
+            }
             chosenTask = chosenJob.pendingReducerList.get(0);
         }
         return new HostAndTask(chosenComputeHost, chosenTask);

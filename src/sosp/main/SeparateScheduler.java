@@ -97,16 +97,18 @@ public class SeparateScheduler{
     }
 
     private static void initialize() throws FileNotFoundException{
-        jobs = SeparateTraffic.loadFromFile("FB2010-1Hr-150-0.txt");
+        jobs = SeparateTraffic.loadFromFile("FB2010-1Hr-150-0_local.txt");
         freeSlots = new int[Settings.nHosts];
         for(int i = 0; i < freeSlots.length; ++i) {
             freeSlots[i] = Settings.nSlots;
         }
 
-        if(Settings.isGaintSwitch)
+        if(Settings.isGaintSwitch) {
             Topology.loadGaint();
-        else
+        }
+        else {
             Topology.loadTwoLayer();
+        }
 
         Topology.loadSeparateGaint();
         freeBw = Topology.getLinkBw(); // 让Scheduler知道各个机器的带宽情况以便后续MapInput阶段调度使用
@@ -349,7 +351,7 @@ public class SeparateScheduler{
                         ++freeSlots[reducer.host];
                         hostInfos[reducer.host].freeSlots ++;
                         reducer.computationFinished(time);
-                        reducer._job.oneReducerFinished();
+                        reducer._job.oneReducerFinished(reducer);
                         Settings.algo.releaseHost(new HostAndTask(reducer.host,reducer));
 //						scheduleOut.println(time+" [R] "+ reducer._job.jobId+"@"+reducer.reducerId +" finishes");
                         itr.remove();
@@ -422,8 +424,9 @@ public class SeparateScheduler{
             // System.out.printf("remainingTrans: %f Count: %d\n", remainingTrans, debugCount);
             assert (remainingTrans >= 0);
             step = Math.min(step, remainingTrans);
-            if(step<=Settings.minTimeStep)
+            if(step<=Settings.minTimeStep) {
                 return Settings.minTimeStep;
+            }
         }
         for(MapTask mapper:activeMappers){
             assert (mapper.inputFinishTime > 0);
@@ -431,16 +434,18 @@ public class SeparateScheduler{
             double remainingComp = mapper.startTime + mapper.computationDelay - time;
             assert (remainingComp > 0);
             step = Math.min(step, remainingComp);
-            if(step<=Settings.minTimeStep)
+            if(step<=Settings.minTimeStep) {
                 return Settings.minTimeStep;
+            }
         }
         for(ReduceTask reducer:activeReducers){
             if(reducer.networkFinishTime<0) {
 
                 Macroflow mf = reducer.macroflow;
                 for (Flow flow : mf.flows) {
-                    if (flow.finishTime >= 0)
+                    if (flow.finishTime >= 0) {
                         continue;
+                    }
                     step = Math.min(step, flow.size - flow.sentSize);
                 }
                 if (mf.isAllFlowsFinished_const()) {
@@ -456,8 +461,9 @@ public class SeparateScheduler{
                 assert(remainingComp>0);
                 step = Math.min(step, remainingComp);
             }
-            if(step<=Settings.minTimeStep)
+            if(step<=Settings.minTimeStep) {
                 return Settings.minTimeStep;
+            }
         }
         return Double.isInfinite(step)?Settings.minTimeStep:step;
 

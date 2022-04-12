@@ -320,7 +320,7 @@ public class Scheduler {
 						++freeSlots[reducer.host];
 						hostInfos[reducer.host].freeSlots ++;
 						reducer.computationFinished(time);
-						reducer._job.oneReducerFinished();
+						reducer._job.oneReducerFinished(reducer);
 						Settings.algo.releaseHost(new HostAndTask(reducer.host,reducer));
 //						scheduleOut.println(time+" [R] "+ reducer._job.jobId+"@"+reducer.reducerId +" finishes");
 						itr.remove();

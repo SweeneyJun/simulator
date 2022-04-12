@@ -34,6 +34,7 @@ public class ReduceTask extends Task{
 	
 	public void networkFinished(double time){
 		networkFinishTime = time;
+		System.out.printf("reducer %d's networkStage of job %d finish at time %f\n", reducerId, _job.jobId, time);
 	}
 	
 	public void computationFinished(double time){
