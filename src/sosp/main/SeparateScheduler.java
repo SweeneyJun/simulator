@@ -431,6 +431,10 @@ public class SeparateScheduler{
             assert (mapper.inputFinishTime < 0);
             double remainingTrans = mapper.inputStartTime + mapper.predictInputTime - time;
             // System.out.printf("remainingTrans: %f Count: %d\n", remainingTrans, debugCount);
+            if(remainingTrans < 0){
+                System.out.printf("remainingComp < 0! mapper.inputStartTime: %f + mapper.predictInputTime: %f - time: %f = remainingComp: %f\n", mapper.inputStartTime, mapper.predictInputTime, time, remainingTrans);
+                System.out.flush();
+            }
             assert (remainingTrans >= 0);
             step = Math.min(step, remainingTrans);
             if(step<=Settings.minTimeStep) {
@@ -441,7 +445,11 @@ public class SeparateScheduler{
             assert (mapper.inputFinishTime > 0);
             assert (mapper.startTime > 0);
             double remainingComp = mapper.startTime + mapper.computationDelay - time;
-            assert (remainingComp > 0);
+            if(remainingComp < 0){
+                System.out.printf("remainingComp < 0! mapper.startTime: %f + mapper.computationDelay: %f - time: %f = remainingComp: %f\n", mapper.startTime, mapper.computationDelay, time, remainingComp);
+                System.out.flush();
+            }
+            assert (remainingComp >= 0);
             step = Math.min(step, remainingComp);
             if(step<=Settings.minTimeStep) {
                 return Settings.minTimeStep;
@@ -467,7 +475,11 @@ public class SeparateScheduler{
             else{
                 assert(reducer.computationFinishTime<0);
                 double remainingComp = reducer.networkFinishTime + reducer.computationDelay - time;
-                assert(remainingComp>0);
+                if(remainingComp < 0){
+                    System.out.printf("remainingComp < 0! reducer.networkFinishTime: %f + reducer.computationDelay: %f - time: %f = remainingComp: %f\n", reducer.networkFinishTime, reducer.computationDelay, time, remainingComp);
+                    System.out.flush();
+                }
+                assert(remainingComp >= 0);
                 step = Math.min(step, remainingComp);
             }
             if(step<=Settings.minTimeStep) {
