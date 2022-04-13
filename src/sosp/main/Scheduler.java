@@ -247,8 +247,12 @@ public class Scheduler {
 			Measurement.measureThroughput(throughput, freeBw, time, step);
 			slot.add(1-nFreeSlotsRatio);
 			time += step; // update current time
+			int flag = activeFlows[0].size() + activeFlows[1].size() + activeFlows[2].size() > 0 ? 0: 1;
 			for(ArrayList<Flow> flows:activeFlows){
   				for(Flow flow:flows){
+					  if(flow.allocatedBw > 0){
+						  flag = 1;
+					  }
 //					System.out.println(flow._macroflow._reducer.host + ":" + leastShuffleSize[flow._macroflow._reducer.host]);
 					flow.sentSize += flow.allocatedBw * step;
 //					leastShuffleSize[flow._macroflow._reducer.host] -= flow.allocatedBw * step;
@@ -257,6 +261,7 @@ public class Scheduler {
 						flow.Finish(time);
 				}
 			}
+			assert (flag == 1);
 //			Measurement.measureTaskThroughput(time, activeFlows, taskTp);
 
 
