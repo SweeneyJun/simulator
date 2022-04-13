@@ -38,6 +38,7 @@ public class MaxMin {
 				for (int node : flow.route) {
 					SeparateScheduler.freeBw[node] += flow.allocatedBw;
 					SeparateScheduler.totalFreeBw += flow.allocatedBw;
+					link_checked.set(node, link_bw[node] < Settings.epsilon);
 				}
 
 
