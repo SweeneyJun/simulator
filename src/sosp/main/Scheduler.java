@@ -57,7 +57,7 @@ public class Scheduler {
 		simulate();
 		Measurement.OutputCompletionTime2(jobs);
 		
-		PrintWriter cout = new PrintWriter(new FileOutputStream("tp_cxw.txt"));
+		PrintWriter cout = new PrintWriter(new FileOutputStream("tp_master.txt"));
 		for(int i=0;i<throughput.size();++i){
 			cout.printf("%.3f %.3f %.3f\n",throughput.get(i).time, throughput.get(i).hostThroughput, slot.get(i));
 		}

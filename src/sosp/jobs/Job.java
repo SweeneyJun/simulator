@@ -70,8 +70,8 @@ public class Job {
 		++nInputMappers;
 		SeparateScheduler.InputMappers.add(mapper); // 在步骤4仿照原Scheduler 4.1 和 4.2部分用迭代器移除
 		assert(notInputMapperList.remove(mapper)); // java默认禁用assert, 要开启-ea参数
-		assert(SeparateScheduler.switchFreeBw > Settings.epsilon);
-		assert(SeparateScheduler.freeBw[host] > Settings.epsilon);
+		assert(SeparateScheduler.switchFreeBw > 1e-6);
+		assert(SeparateScheduler.freeBw[host] > 1e-6);
 		double allocatedBw = Math.min(SeparateScheduler.switchFreeBw, SeparateScheduler.freeBw[host]);
 		SeparateScheduler.switchFreeBw -= allocatedBw;
 		SeparateScheduler.freeBw[host] -= allocatedBw;

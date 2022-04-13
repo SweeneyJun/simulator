@@ -71,7 +71,7 @@ public class Measurement {
 			//System.out.printf("FCT%d: %.3f\n",p[i],pct(fct,p[i]/100.0));
 		}
 		for(int i=0;i<cnt.length;++i){
-			System.out.printf("%.3f ",sum[i]/cnt[i]);
+			System.out.printf("%.3f | %d     ",sum[i]/cnt[i], cnt[i]);
 		}
 		System.out.println();
 		

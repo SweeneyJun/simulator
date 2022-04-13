@@ -59,11 +59,11 @@ public class DoubleFIFO implements  Algorithm {
             }
             SeparateScheduler.totalFreeBw += SeparateScheduler.freeBw[i];
         }
-        if(SeparateScheduler.totalFreeBw < Settings.epsilon || SeparateScheduler.switchFreeBw < Settings.epsilon){
-            if(SeparateScheduler.totalFreeBw < Settings.epsilon){
+        if(SeparateScheduler.totalFreeBw < 1e-6 || SeparateScheduler.switchFreeBw < 1e-6){
+            if(SeparateScheduler.totalFreeBw < 1e-6){
                 SeparateScheduler.totalFreeBw = 0;
             }
-            else{
+            if(SeparateScheduler.switchFreeBw < 1e-6){
                 SeparateScheduler.switchFreeBw = 0;
             }
             return null;
@@ -115,7 +115,13 @@ public class DoubleFIFO implements  Algorithm {
                 }
             }
             else{
-                if (SeparateScheduler.freeBw[i] < Settings.epsilon || SeparateScheduler.freeBw[Settings.nHosts + i] < Settings.epsilon){
+                if (SeparateScheduler.freeBw[i] < 1e-6 || SeparateScheduler.freeBw[Settings.nHosts + i] < 1e-6){
+                    if(SeparateScheduler.freeBw[i] < 1e-6){
+                        SeparateScheduler.freeBw[i] = 0;
+                    }
+                    if(SeparateScheduler.freeBw[Settings.nHosts + i] < 1e-6){
+                        SeparateScheduler.freeBw[Settings.nHosts + i] = 0;
+                    }
                     continue; // 4.11: 虽然Reduce阶段以freeSlot为优先目标, 但要警惕有Slot无带宽的情况
                     // 上下行带宽同时check
                 }
