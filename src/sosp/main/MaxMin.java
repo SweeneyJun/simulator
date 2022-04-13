@@ -8,7 +8,12 @@ import sosp.network.Flow;
 public class MaxMin {
 	// zy: what does a mean?
 	static int a = 0;
-	
+
+	// 4.13: 发现了Separate场景下第二次getMaxMin会导致所有流的allocatedBw不为0的原因是, 下面某次对flow的遍历会先将flow的allocatedBw置为0
+	// 而这个过程中并没有把占用的带宽还回去, 就会导致接下来flow无带宽可分配的情况, 因为不好直接修改这个复杂的getMaxMin, 也不方便在外层跳过这个过程
+	// 所以我的想法是修改一下对flow的遍历过程, 在置0前先归还allocatedBw
+
+
 	// all_flows: all flows divided by dscp;    link_bw: total bandwidth of a given link
 	static public void getMaxMin(ArrayList<Flow>[] all_flows, double[] link_bw){
 		int dscp = all_flows.length;
@@ -28,6 +33,14 @@ public class MaxMin {
 			for(int i=0; i<link_bw.length; ++i)
 				link_flows.add(new ArrayList<Flow>());
 			for(Flow flow : flows){
+
+				// 4.13 添加的置0前归还带宽的过程
+				for (int node : flow.route) {
+					SeparateScheduler.freeBw[node] += flow.allocatedBw;
+					SeparateScheduler.totalFreeBw += flow.allocatedBw;
+				}
+
+
 				flow.allocatedBw = 0; // allocated bandwidth = 0
 				boolean ok = true;
 				for(int i=0; i<flow.route.length;++i)
