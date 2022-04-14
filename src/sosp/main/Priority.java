@@ -129,16 +129,16 @@ public class Priority {
 
 	// return active Flows in the infinitePrioritiesMf scene
 	public static ArrayList<Flow>[] infinitePrioritiesMf(){
-		Collections.sort(Scheduler.activeReducers, new Comparator<ReduceTask>(){
+		Collections.sort(TestPushBox.activeReducers, new Comparator<ReduceTask>(){
 			@Override public int compare(ReduceTask arg0, ReduceTask arg1) {
 				return arg1.macroflow.size==arg0.macroflow.size ? 0 : (arg1.macroflow.size<arg0.macroflow.size ? -1 : 1);
 			}
 		});
 		// activeFlows is 2-dimension ArrayList
-		@SuppressWarnings("unchecked") ArrayList<Flow>[] activeFlows = new ArrayList[Scheduler.activeReducers.size()];
-		for(int i=0;i<Scheduler.activeReducers.size();++i){
+		@SuppressWarnings("unchecked") ArrayList<Flow>[] activeFlows = new ArrayList[TestPushBox.activeReducers.size()];
+		for(int i=0;i<TestPushBox.activeReducers.size();++i){
 			activeFlows[i] = new ArrayList<Flow>();
-			Macroflow mf = Scheduler.activeReducers.get(i).macroflow;
+			Macroflow mf = TestPushBox.activeReducers.get(i).macroflow;
 			if(mf.finishTime>=0)
 				continue;
 			for(Flow flow:mf.flows){
@@ -157,7 +157,7 @@ public class Priority {
 
 	// return active Flows in the infinitePrioritiesCoflow scene
 	public static ArrayList<Flow>[] infinitePrioritiesCoflow(){
-		Collections.sort(Scheduler.activeJobs, new Comparator<Job>(){
+		Collections.sort(TestPushBox.activeJobs, new Comparator<Job>(){
 			@Override public int compare(Job arg0, Job arg1) {
 				return arg1.coflow.size==arg0.coflow.size ? 0 : (arg1.coflow.size<arg0.coflow.size ? -1 : 1);
 			}
@@ -165,13 +165,13 @@ public class Priority {
 		int[] coflowOrder = new int[2333]; // maximum possible number of coflows
 
 		// alloc the sorted order to jobId sequence
-		for(int i=0;i<Scheduler.activeJobs.size();++i)
-			coflowOrder[Scheduler.activeJobs.get(i).jobId] = i;
+		for(int i=0;i<TestPushBox.activeJobs.size();++i)
+			coflowOrder[TestPushBox.activeJobs.get(i).jobId] = i;
 		
-		@SuppressWarnings("unchecked") ArrayList<Flow>[] activeFlows = new ArrayList[Scheduler.activeJobs.size()];
+		@SuppressWarnings("unchecked") ArrayList<Flow>[] activeFlows = new ArrayList[TestPushBox.activeJobs.size()];
 		for(int i=0;i<activeFlows.length;++i)
 			activeFlows[i] = new ArrayList<Flow>();
-		for(ReduceTask reducer:Scheduler.activeReducers){
+		for(ReduceTask reducer:TestPushBox.activeReducers){
 			Macroflow mf = reducer.macroflow;
 			if(mf.finishTime>=0)
 				continue;
@@ -189,7 +189,7 @@ public class Priority {
 		assert(Settings.nPriorities-1 >= 0);
 		double[] thres = new double[Settings.nPriorities-1];
 		double min = Double.POSITIVE_INFINITY, max = 0;
-		for(Job job:Scheduler.jobs){
+		for(Job job:TestPushBox.jobs){
 			Coflow coflow = job.coflow;
 			min = Math.min(min, coflow.size);
 			max = Math.max(max, coflow.size);
@@ -206,7 +206,7 @@ public class Priority {
 		assert(Settings.nPriorities-1 >= 0);
 		double[] thres = new double[Settings.nPriorities-1];
 		double min = Double.POSITIVE_INFINITY, max = 0;
-		for(Job job:Scheduler.jobs){
+		for(Job job:TestPushBox.jobs){
 			Coflow coflow = job.coflow;
 			for(Macroflow mf:coflow.macroflows){
 				min = Math.min(min, mf.size);
@@ -242,7 +242,7 @@ public class Priority {
 		@SuppressWarnings("unchecked") ArrayList<Flow>[] activeFlows = new ArrayList[Settings.nPriorities];
 		for(int i=0;i<activeFlows.length;++i)
 			activeFlows[i] = new ArrayList<Flow>();
-		for(ReduceTask reducer:Scheduler.activeReducers){
+		for(ReduceTask reducer:TestPushBox.activeReducers){
 			Macroflow mf = reducer.macroflow;
 			if(mf.finishTime>=0)
 				continue;

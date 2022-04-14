@@ -156,8 +156,9 @@ public class Measurement {
 		tm = System.currentTimeMillis();
 	}
 	
-	public static void toc(){
+	public static long toc(){
 		assert(tm>=0);
 		System.out.println("Time: "+(System.currentTimeMillis()-tm)/1000 + " seconds.");
+		return (System.currentTimeMillis()-tm)/1000;
 	}
 }

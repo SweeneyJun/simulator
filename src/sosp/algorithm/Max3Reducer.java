@@ -4,7 +4,7 @@ import jdk.nashorn.internal.ir.IfNode;
 import sosp.jobs.*;
 import sosp.main.HostInfo;
 import sosp.main.Priority;
-import sosp.main.Scheduler;
+import sosp.main.TestPushBox;
 import sosp.main.Settings;
 import sosp.network.Flow;
 
@@ -17,12 +17,12 @@ public class Max3Reducer implements Algorithm {
     @Override
     public HostAndTask allocateHostAndTask() {
 
-//        Job chosenJob = Settings.fairJobScheduler ? Algorithm.fairJobSelector() : Algorithm.smallestJobSelector();
-//        Job[] chosenJobs = Settings.fairJobScheduler ? Algorithm.jobSorterFair():Algorithm.jobSorterFifo();
+//        Job chosenJob = Settings.fairJobTestPushBox ? Algorithm.fairJobSelector() : Algorithm.smallestJobSelector();
+//        Job[] chosenJobs = Settings.fairJobTestPushBox ? Algorithm.jobSorterFair():Algorithm.jobSorterFifo();
 //        Job[] chosenJobs = Algorithm.jobSorterSJF();
 
         ArrayList<JobQueue> jobQueues = new ArrayList<>();
-        jobQueues = Scheduler.jobQueues;
+        jobQueues = TestPushBox.jobQueues;
 
         Collections.sort(jobQueues, new Comparator<JobQueue>() {
             @Override
@@ -31,7 +31,7 @@ public class Max3Reducer implements Algorithm {
             }
         });
 
-        for (JobQueue jobQueue: Scheduler.jobQueues) {
+        for (JobQueue jobQueue: TestPushBox.jobQueues) {
             if (1.0*jobQueue.nActiveTasks()/Settings.nSlots/Settings.nHosts > jobQueue.maxResource) {
                 continue;
             }
@@ -48,14 +48,14 @@ public class Max3Reducer implements Algorithm {
                     for (MapTask mt : chosenJob.pendingMapperList) {
                         for (int i = 0; i < mt.hdfsHost.length; ++i) {
                             if (giveUp == 0) { // wcx: slotYield = 0 in Algorithm 2, line 2
-                                if (Scheduler.freeSlots[mt.hdfsHost[i]] > 0) {
+                                if (TestPushBox.freeSlots[mt.hdfsHost[i]] > 0) {
                                     return new HostAndTask(mt.hdfsHost[i], mt);
                                 }
                             } else { // wcx: notHinderTask test in Algorithm 2, line 12 - 13
-                                if (Scheduler.freeSlots[mt.hdfsHost[i]] > 0 && Scheduler.hostInfos[mt.hdfsHost[i]].shuffleReducerNum == 0) {
+                                if (TestPushBox.freeSlots[mt.hdfsHost[i]] > 0 && TestPushBox.hostInfos[mt.hdfsHost[i]].shuffleReducerNum == 0) {
                                     return new HostAndTask(mt.hdfsHost[i], mt);
                                 }
-                                if (Scheduler.freeSlots[mt.hdfsHost[i]] > 0 && Scheduler.hostInfos[mt.hdfsHost[i]].shuffleReducerNum != 0 && mt.computationDelay <= Scheduler.hostInfos[mt.hdfsHost[i]].shuffleTime * alpha) {
+                                if (TestPushBox.freeSlots[mt.hdfsHost[i]] > 0 && TestPushBox.hostInfos[mt.hdfsHost[i]].shuffleReducerNum != 0 && mt.computationDelay <= TestPushBox.hostInfos[mt.hdfsHost[i]].shuffleTime * alpha) {
                                     return new HostAndTask(mt.hdfsHost[i], mt);
                                 }
                             }
@@ -64,11 +64,11 @@ public class Max3Reducer implements Algorithm {
                     //                chosenTask = chosenJob.pendingMapperList.get(0);
                     //                // host
                     //                int host = -1;
-                    //                for (int i = 0; i < Scheduler.freeSlots.length; ++i) {
-                    //                    if (Scheduler.freeSlots[i] == 0)
+                    //                for (int i = 0; i < TestPushBox.freeSlots.length; ++i) {
+                    //                    if (TestPushBox.freeSlots[i] == 0)
                     //                        continue;
                     //                    host = (host < 0) ? i : host;
-                    //                    if (Scheduler.hostInfos[i].shuffleTime == 0 || Scheduler.hostInfos[host].shuffleTime < Scheduler.hostInfos[i].shuffleTime)
+                    //                    if (TestPushBox.hostInfos[i].shuffleTime == 0 || TestPushBox.hostInfos[host].shuffleTime < TestPushBox.hostInfos[i].shuffleTime)
                     //                        host = i;
                     //                }
                     //                if (host < 0)
@@ -78,10 +78,10 @@ public class Max3Reducer implements Algorithm {
                     ////                        return new HostAndTask(host, chosenTask);
                     ////                    }
                     ////                    else {
-                    //                        if (Scheduler.hostInfos[host].shuffleReducerNum == 0) {
+                    //                        if (TestPushBox.hostInfos[host].shuffleReducerNum == 0) {
                     //                            return new HostAndTask(host, chosenTask);
                     //                        }
-                    //                        if (Scheduler.hostInfos[host].shuffleReducerNum != 0 && chosenTask.computationDelay < Scheduler.hostInfos[host].shuffleTime * alpha) {
+                    //                        if (TestPushBox.hostInfos[host].shuffleReducerNum != 0 && chosenTask.computationDelay < TestPushBox.hostInfos[host].shuffleTime * alpha) {
                     //                            return new HostAndTask(host, chosenTask);
                     //                        }
                     ////                    }
@@ -92,7 +92,7 @@ public class Max3Reducer implements Algorithm {
 
                     HostInfo[] tempHostInfos = new HostInfo[Settings.nHosts];
                     for (int i = 0; i < Settings.nHosts; i++) {
-                        tempHostInfos[i] = Scheduler.hostInfos[i];
+                        tempHostInfos[i] = TestPushBox.hostInfos[i];
                     }
 
                     Arrays.sort(tempHostInfos, new Comparator<HostInfo>() {
@@ -110,14 +110,14 @@ public class Max3Reducer implements Algorithm {
                     if (jobQueue.mode.equals("FIFO")) {
                         if (jobQueue.canTransfer(chosenJob)) {
                             if (chosenJob.coflow.size >= HostInfo.hostMaxMinCoflowSize) {
-                                if (tempHostInfos[0].shuffleReducerNum >= Settings.reduceNum || Scheduler.freeSlots[tempHostInfos[0].hostId] == 0) {
+                                if (tempHostInfos[0].shuffleReducerNum >= Settings.reduceNum || TestPushBox.freeSlots[tempHostInfos[0].hostId] == 0) {
                                     giveUp = 1;
                                     continue;
                                 }
                                 return new HostAndTask(tempHostInfos[0].hostId, chosenTask);
                             } else {
                                 for (int i = 0; i < Settings.nHosts; i++) {
-                                    if (chosenJob.coflow.size < tempHostInfos[i].minCoflowSize && Scheduler.freeSlots[tempHostInfos[i].hostId] != 0) {
+                                    if (chosenJob.coflow.size < tempHostInfos[i].minCoflowSize && TestPushBox.freeSlots[tempHostInfos[i].hostId] != 0) {
                                         return new HostAndTask(tempHostInfos[i].hostId, chosenTask);
                                     }
                                 }
@@ -126,14 +126,14 @@ public class Max3Reducer implements Algorithm {
                     }
                     else{
                         if (chosenJob.coflow.size >= HostInfo.hostMaxMinCoflowSize) {
-                            if (tempHostInfos[0].shuffleReducerNum >= Settings.reduceNum || Scheduler.freeSlots[tempHostInfos[0].hostId] == 0) {
+                            if (tempHostInfos[0].shuffleReducerNum >= Settings.reduceNum || TestPushBox.freeSlots[tempHostInfos[0].hostId] == 0) {
                                 giveUp = 1;
                                 continue;
                             }
                             return new HostAndTask(tempHostInfos[0].hostId, chosenTask);
                         } else {
                             for (int i = 0; i < Settings.nHosts; i++) {
-                                if (chosenJob.coflow.size < tempHostInfos[i].minCoflowSize && Scheduler.freeSlots[tempHostInfos[i].hostId] != 0) {
+                                if (chosenJob.coflow.size < tempHostInfos[i].minCoflowSize && TestPushBox.freeSlots[tempHostInfos[i].hostId] != 0) {
                                     return new HostAndTask(tempHostInfos[i].hostId, chosenTask);
                                 }
                             }
@@ -147,7 +147,7 @@ public class Max3Reducer implements Algorithm {
                     // host
                     HostInfo[] tempHostInfos = new HostInfo[Settings.nHosts];
                     for (int i = 0; i < Settings.nHosts; i++) {
-                        tempHostInfos[i] = Scheduler.hostInfos[i];
+                        tempHostInfos[i] = TestPushBox.hostInfos[i];
                     }
 
                     Arrays.sort(tempHostInfos, new Comparator<HostInfo>() {
@@ -173,10 +173,10 @@ public class Max3Reducer implements Algorithm {
                         if (giveUp == 0) {
                             return new HostAndTask(host, chosenTask);
                         } else {
-                            if (Scheduler.hostInfos[host].shuffleReducerNum == 0) {
+                            if (TestPushBox.hostInfos[host].shuffleReducerNum == 0) {
                                 return new HostAndTask(host, chosenTask);
                             }
-                            if (Scheduler.hostInfos[host].shuffleReducerNum != 0 && ((MapTask) chosenTask).predictComputationDelay < Scheduler.hostInfos[host].shuffleTime) {
+                            if (TestPushBox.hostInfos[host].shuffleReducerNum != 0 && ((MapTask) chosenTask).predictComputationDelay < TestPushBox.hostInfos[host].shuffleTime) {
                                 return new HostAndTask(host, chosenTask);
                             }
                         }
@@ -201,8 +201,8 @@ public class Max3Reducer implements Algorithm {
             activeFlows[i] = new ArrayList<Flow>();
 
         for (int i = 0; i < Settings.nHosts; i ++) {
-            for (int j = 0; j < Scheduler.hostInfos[i].shuffleReducerNum; j ++) {
-                for(Flow flow: Scheduler.hostInfos[i].shuffleReducer[j].macroflow.flows) {
+            for (int j = 0; j < TestPushBox.hostInfos[i].shuffleReducerNum; j ++) {
+                for(Flow flow: TestPushBox.hostInfos[i].shuffleReducer[j].macroflow.flows) {
                     if(flow.finishTime>=0)
                         continue;
                     if (nPriority - j - 1 >= 0){

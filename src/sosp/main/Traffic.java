@@ -27,7 +27,7 @@ public class Traffic {
 		}
 
 		ArrayList<Integer> queuePick = new ArrayList<>();
-		for (int i = 0; i < Scheduler.jobQueues.size(); i ++){
+		for (int i = 0; i < TestPushBox.jobQueues.size(); i ++){
 			queuePick.add(i);
 		}
 		
@@ -43,7 +43,7 @@ public class Traffic {
 		
 		Random error = new Random(0);
 
-		int ii = 0;
+		// int ii = 0;
 
 		while(cin.hasNextLine()){
 			String[] elem = cin.nextLine().split("\\s+"); // "\\s+" match any blank character
@@ -63,7 +63,7 @@ public class Traffic {
 			job.arriveTime = Long.parseLong(elem[++pointer])/1000.0 * Settings.timeScale; // normalized time: s
 
 			Collections.shuffle(queuePick,Settings.r);
-			job.jobQueue = Scheduler.jobQueues.get(queuePick.get(0));
+			job.jobQueue = TestPushBox.jobQueues.get(queuePick.get(0));
 
 			// tasks
 			int mappers = Integer.parseInt(elem[++pointer]);
@@ -94,11 +94,11 @@ public class Traffic {
 
 
 //			if (job.coflow.size > 0.1) {
-//				job.jobQueue = Scheduler.jobQueues.get(1);
+//				job.jobQueue = TestPushBox.jobQueues.get(1);
 //				ii ++;
 //			}
 //			else{
-//				job.jobQueue = Scheduler.jobQueues.get(0);
+//				job.jobQueue = TestPushBox.jobQueues.get(0);
 //			}
 
 			// map-tasks
@@ -152,7 +152,7 @@ public class Traffic {
 			jobs[jobId++] = job;
 		}
 		cin.close();
-		System.out.println("i: "+ ii);
+		// System.out.println("读取job完毕");
 		return jobs;
 	}
 	
