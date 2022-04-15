@@ -143,6 +143,7 @@ public class Settings {
 					case 13: algo = new ShuffleWatcher(); break;
 					case 14: algo = new Sig19Neat(); break;
 					case 15: algo = new DoubleFIFO("hybrid"); break;
+					case 16: algo = new DoubleFIFOEDGE("hybrid"); break;
 				}
 			}
 			assert(algorithm >= 0);

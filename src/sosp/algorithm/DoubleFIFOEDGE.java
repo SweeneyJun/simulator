@@ -1,5 +1,6 @@
 package sosp.algorithm;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -11,12 +12,12 @@ import sosp.main.SeparateScheduler;
 import sosp.main.Settings;
 import sosp.network.Flow;
 
-public class DoubleFIFO implements  Algorithm {
+public class DoubleFIFOEDGE implements  Algorithm {
 
     double weight = 1;
     boolean hybrid = false;
 
-    public DoubleFIFO(String mode){
+    public DoubleFIFOEDGE(String mode){
         if(mode.equalsIgnoreCase("coflow"))
             weight=1;
         else if (mode.equalsIgnoreCase("macroflow"))
@@ -54,8 +55,9 @@ public class DoubleFIFO implements  Algorithm {
         // 4.11: check HostBw的同时别忘了Check SwitchBw!
         SeparateScheduler.totalFreeBw = 0;
         for(int i = 0; i < SeparateScheduler.freeBw.length; ++i){
-            if(SeparateScheduler.freeBw[i] < Settings.epsilon){ // 单个链路带宽这里使用的误差界还是小一点好, 因为其并没有反复加减, 累计误差不会太高, 如果调高这个界会误把存在的带宽置为0, 导致Assert error
+            if(SeparateScheduler.freeBw[i] < 1e-6){
                 SeparateScheduler.freeBw[i] = 0;
+                continue;
             }
             SeparateScheduler.totalFreeBw += SeparateScheduler.freeBw[i];
         }
@@ -95,62 +97,48 @@ public class DoubleFIFO implements  Algorithm {
         }
 
 
-
         // Second choose a task and allocate
         Task chosenTask = null;
 
-        // 选择MapTask时的准则如下
-        // choose the ComputeHost with freeSlot and most freeBw
-        // 选择ReduceTask时的准则如下
-        // choose the ComputeHost with most freeSlot
+        // 在原版DoubleFIFO中, ReduceTask和MapTask部署的机器使用了不同的准则
+        // MapTask倾向于选择有更多带宽的Host, Reduce倾向于选择有更多freeSlot的Host, 而这种准则其实不太合理, 实验中发现会导致如下corner case:
+        // ReduceTask部署的机器上有其他Job的Input阶段的MapTask, 而MapTask独占带宽导致ReducerTask占用slot却无法工作
+        // 所以在这版DoubleFIFOEDGE中, 将ReduceTask和MapTask选择机器的准则改为相同的:
+        // 即有空闲slot的情况下选择具有更多带宽的Host
         int chosenComputeHost = -1;
         for (int i = 0; i < Settings.nHosts; ++i) {
             chosenComputeHost = (chosenComputeHost < 0) ? i : chosenComputeHost;
-            if(chosenJob.mapStageFinishTime < 0){
-                if (SeparateScheduler.freeSlots[i] == 0){
-                    continue; // 4.11: 虽然MapInput阶段以带宽为优先目标, 但要警惕有带宽无Slot的情况!
-                }
-                if (SeparateScheduler.freeBw[chosenComputeHost] < SeparateScheduler.freeBw[i]) {
-                    chosenComputeHost = i;
-                }
+            if (SeparateScheduler.freeSlots[i] == 0){
+                continue; // 4.11: 虽然MapInput阶段以带宽为优先目标, 但要警惕有带宽无Slot的情况!
             }
-            else{
-                if (SeparateScheduler.freeBw[i] < 1e-6 || SeparateScheduler.freeBw[Settings.nHosts + i] < 1e-6){
-                    if(SeparateScheduler.freeBw[i] < 1e-6){
-                        SeparateScheduler.freeBw[i] = 0;
-                    }
-                    if(SeparateScheduler.freeBw[Settings.nHosts + i] < 1e-6){
-                        SeparateScheduler.freeBw[Settings.nHosts + i] = 0;
-                    }
-                    continue; // 4.11: 虽然Reduce阶段以freeSlot为优先目标, 但要警惕有Slot无带宽的情况
-                    // 上下行带宽同时check
-                }
-                if (SeparateScheduler.freeSlots[chosenComputeHost] < SeparateScheduler.freeSlots[i]){
-                    chosenComputeHost = i;
-                }
+            if (SeparateScheduler.freeBw[chosenComputeHost] < SeparateScheduler.freeBw[i]) {
+                chosenComputeHost = i;
             }
+
         }
 
         if(chosenJob.mapStageFinishTime < 0) { // 分配MapTask
             assert(chosenJob.notInputMapperList.size() > 0);
             assert (chosenComputeHost >= 0); // 前面已经检查过是否有freeSlot以及freeBw, 如果逻辑正确这里不应该找不到计算节点 .. 4.11: 这里确实会找到计算结点, 但是在极端情况下这个计算结点可能无效!
             // 极端情况是指, 有freeSlot的host没freeBw, 有freeBw的host无freeSlot, 这种host能躲避前面的check, 最终从在找不到合适host的循环中返回一个初始化的值, 即host=0, 然后在这里导入错误, 所以这里还要检查
-            if(SeparateScheduler.freeBw[chosenComputeHost] < 1e-3 || SeparateScheduler.switchFreeBw < 1e-3){
-                // SeparateScheduler.freeBw[chosenComputeHost] = 0;
+            if(SeparateScheduler.freeBw[chosenComputeHost] < 1e-4 || SeparateScheduler.switchFreeBw < 1e-4){
+                SeparateScheduler.freeBw[chosenComputeHost] = 0;
                 return null; // 二次防卫!
             }
-            else if(SeparateScheduler.freeSlots[chosenComputeHost] == 0){
+            else if (SeparateScheduler.freeSlots[chosenComputeHost] == 0){
                 return null;
             }
             chosenTask = chosenJob.notInputMapperList.get(0);
         }
         else{ // 分配ReduceTask
+            assert (chosenJob.notInputMapperList.size() == 0 && chosenJob.pendingMapperList.size() == 0); // 防卫
             assert (chosenJob.hasPendingTasks_const());
             assert (chosenComputeHost >= 0);
-            if(SeparateScheduler.freeSlots[chosenComputeHost] == 0){
+            if(SeparateScheduler.freeBw[chosenComputeHost] < 1e-4 || SeparateScheduler.switchFreeBw < 1e-4){
+                SeparateScheduler.freeBw[chosenComputeHost] = 0;
                 return null; // 二次防卫!
             }
-            else if (SeparateScheduler.freeBw[chosenComputeHost] < 1e-3 || SeparateScheduler.switchFreeBw < 1e-3){
+            else if (SeparateScheduler.freeSlots[chosenComputeHost] == 0){
                 return null;
             }
             chosenTask = chosenJob.pendingReducerList.get(0);

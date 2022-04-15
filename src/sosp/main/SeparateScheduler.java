@@ -304,7 +304,7 @@ public class SeparateScheduler{
                             }
                             if(activeJobs.size() == 1) {
                                 assert (tempSum == totalFreeBw); // 这里这个assert似乎是不对的, 因为如果此时有很多job的同时运行的话，一个job的mapStage结束后其他job的mapper仍在占用带宽传输!
-                                assert (Math.abs(tempSum - Settings.speed * Settings.nHosts * 2) < 1e-6);
+                                assert (Math.abs(tempSum - Settings.speed * Settings.nHosts * 2) < 1e-3);
                                 totalFreeBw = Settings.speed * Settings.nHosts * 2; // 重新置回初始设置, 以免误差继续累计
                                 for(int i = 0; i < freeBw.length; ++i){
                                     freeBw[i] = Settings.speed; // 重新置回初始设置, 以免误差继续累计
