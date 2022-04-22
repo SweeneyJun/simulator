@@ -95,6 +95,7 @@ public class Scheduler {
 //		taskTp.close();
 
 		System.out.println("max reducer num: " + HostInfo.hostMaxReducerNum);
+		System.out.printf("total Mappers: %d\n", Traffic.totalMapCount);
 		
 		/*if(Settings.algo instanceof Neat)
 			System.out.println(Neat.allocationTime);
@@ -104,7 +105,7 @@ public class Scheduler {
 	
 	
 	private static void initialize() throws FileNotFoundException {
-		jobs = Traffic.loadFromFile("FB2010-1Hr-150-0_local.txt");
+		jobs = Traffic.loadFromFile("FB2010-1Hr-150-0.txt");
 		//jobs = Traffic.loadFromFile("testbed-toy.txt");
 		//jobs = Traffic.loadFromFile("neat.txt");
 		//jobs = Traffic.loadFromFile("neat-executing-time.txt");

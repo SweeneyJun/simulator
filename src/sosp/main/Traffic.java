@@ -13,6 +13,8 @@ import sosp.network.Flow;
 import sosp.network.Macroflow;
 
 public class Traffic {
+
+	public static int totalMapCount = 0;
 	
 	@SuppressWarnings("unchecked")
 	public static Job[] loadFromFile(String traffic){
@@ -68,6 +70,8 @@ public class Traffic {
 			// tasks
 			int mappers = Integer.parseInt(elem[++pointer]);
 			int reducers = Integer.parseInt(elem[pointer+=mappers+1]); // inside [] code runs first
+
+			totalMapCount += mappers;
 			
 			// reduce-tasks
 			job.pendingReducerList = new ArrayList<ReduceTask>();
