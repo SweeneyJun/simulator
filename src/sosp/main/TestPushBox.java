@@ -34,6 +34,9 @@ public class TestPushBox {
     public static ArrayList<Measurement.Throughput> throughput = null;
     public static ArrayList<Double> slot = null;
 
+    public static long alCount = 0;
+    public static double alTime = 0;
+
     public static ArrayList<JobQueue> jobQueues = new ArrayList<>();
 
     //	public static double[] leastShuffleSize = null;
@@ -57,16 +60,17 @@ public class TestPushBox {
         PrintWriter cout = new PrintWriter(new FileOutputStream("./result/runTimeLog_" + args[1] + "_" + args[0]));
         for(int j = 0; j < ep; ++j) {
             time = 0;
-            Measurement.tic();//系统当前时间ms
+
             Settings.loadFromFile("config.ini", args);//载入配置文件
             initialize(args[0]);
 
             simulate();
+            System.out.printf("Loop Times: %d ScheduleTime:%f  avgTime: %f\n", alCount, alTime/1000, alTime/(alCount * 1000));
             // Measurement.OutputCompletionTime2(jobs);
 
 
-            Long tempTime = Measurement.toc();
-            cout.printf("%d\n", tempTime);
+
+            cout.printf("%d  %f  %f\n", alCount, alTime/1000, alTime/(alCount * 1000));
 
         }
         cout.close();
@@ -109,6 +113,8 @@ public class TestPushBox {
 
 
     private static void initialize(String log) throws FileNotFoundException {
+        alCount = 0;
+        alTime = 0;
         jobs = Traffic.loadFromFile(log);
         //jobs = Traffic.loadFromFile("testbed-toy.txt");
         //jobs = Traffic.loadFromFile("neat.txt");
@@ -173,8 +179,11 @@ public class TestPushBox {
 
             // 2. scheduling tasks (both mapper and reducer)
             while(true){
+                alCount += 1;
                 // HostAndTask represent the <host, task> pair
+                double tempTime = System.currentTimeMillis();
                 HostAndTask ht = Settings.algo.allocateHostAndTask();
+                alTime += (System.currentTimeMillis() - tempTime);
                 if(ht==null)
                     break;
                 --freeSlots[ht.host];
