@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Map;
 
-import sosp.main.SeparateScheduler;
+import sosp.main.TestSunderer;
 import sosp.main.Settings;
 import sosp.network.Coflow;
 import sosp.network.Macroflow;
@@ -68,18 +68,18 @@ public class Job {
 
 	public void oneMapperBeginInput(int host, MapTask mapper){
 		++nInputMappers;
-		SeparateScheduler.InputMappers.add(mapper); // 在步骤4仿照原Scheduler 4.1 和 4.2部分用迭代器移除
+		TestSunderer.InputMappers.add(mapper); // 在步骤4仿照原Scheduler 4.1 和 4.2部分用迭代器移除
 		assert(notInputMapperList.remove(mapper)); // java默认禁用assert, 要开启-ea参数
-		assert(SeparateScheduler.switchFreeBw > 1e-6);
-		assert(SeparateScheduler.freeBw[host] > 1e-6);
-		double allocatedBw = Math.min(SeparateScheduler.switchFreeBw, SeparateScheduler.freeBw[host]);
-		SeparateScheduler.switchFreeBw -= allocatedBw;
-		SeparateScheduler.freeBw[host] -= allocatedBw;
-		SeparateScheduler.totalFreeBw -= allocatedBw;
+		assert(TestSunderer.switchFreeBw > 1e-6);
+		assert(TestSunderer.freeBw[host] > 1e-6);
+		double allocatedBw = Math.min(TestSunderer.switchFreeBw, TestSunderer.freeBw[host]);
+		TestSunderer.switchFreeBw -= allocatedBw;
+		TestSunderer.freeBw[host] -= allocatedBw;
+		TestSunderer.totalFreeBw -= allocatedBw;
 		mapper.allocatedInputBw = allocatedBw; // 后续要归还switchFreeBw/freeBw[host]/totalFreeBw
-		mapper.emit(host, SeparateScheduler.time);
+		mapper.emit(host, TestSunderer.time);
 
-		mapper.inputStartTime = SeparateScheduler.time;
+		mapper.inputStartTime = TestSunderer.time;
 		mapper.predictInputTime = mapper.inputSize / mapper.allocatedInputBw;
 
 		BigDecimal bd = new BigDecimal(mapper.predictInputTime);
@@ -87,16 +87,16 @@ public class Job {
 	}
 	public void oneMapperEndInput(int host, MapTask mapper){ // TODO Input结束时是否应该开始运行行为? 即原Scheduler Simulator函数里调用oneMapperStarted(ht.host, mapper)的行为, 还是另写过程, 等待思考
 		--nInputMappers;
-		SeparateScheduler.switchFreeBw += mapper.allocatedInputBw;
-		SeparateScheduler.freeBw[host] += mapper.allocatedInputBw;
-		SeparateScheduler.totalFreeBw += mapper.allocatedInputBw;
+		TestSunderer.switchFreeBw += mapper.allocatedInputBw;
+		TestSunderer.freeBw[host] += mapper.allocatedInputBw;
+		TestSunderer.totalFreeBw += mapper.allocatedInputBw;
 
-		mapper.inputFinishTime = SeparateScheduler.time; // 一个mapper只有在input阶段结束后才可以开始计算
+		mapper.inputFinishTime = TestSunderer.time; // 一个mapper只有在input阶段结束后才可以开始计算
 
 		// begin Running
 		mapper._job.oneMapperStarted(host, mapper);
-		mapper.emit(host, SeparateScheduler.time);
-		SeparateScheduler.activeMappers.add(mapper);
+		mapper.emit(host, TestSunderer.time);
+		TestSunderer.activeMappers.add(mapper);
 	}
 	
 	public void oneMapperStarted(int host, MapTask mapper){
@@ -119,12 +119,12 @@ public class Job {
 		++nActiveReducers;
 		assert(pendingReducerList.remove(reducer)); // assert(pendingReducerList.remove(reducer))为什么没用了! answer: java默认禁用assert, 要开启-ea参数
 		emittedReducerList.add(reducer);
-		System.out.printf("reducer %d of job %d start at time %f\n", reducer.reducerId, reducer._job.jobId, SeparateScheduler.time);
+		System.out.printf("reducer %d of job %d start at time %f\n", reducer.reducerId, reducer._job.jobId, TestSunderer.time);
 	}
 	
 	public void oneReducerFinished(ReduceTask reducer){
 		--nActiveReducers;
-		System.out.printf("reducer %d of job %d finish at time %f\n", reducer.reducerId, jobId, SeparateScheduler.time);
+		System.out.printf("reducer %d of job %d finish at time %f\n", reducer.reducerId, jobId, TestSunderer.time);
 	}
 	
 	public void mapStageFinish(double time){

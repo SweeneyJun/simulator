@@ -27,7 +27,7 @@ public class SeparateTraffic {
 //        }
 
         ArrayList<Integer> queuePick = new ArrayList<>(); // 用来从多个JobQueue中随机选一个的Queue的数组
-        for (int i = 0; i < SeparateScheduler.jobQueues.size(); ++i){
+        for (int i = 0; i < TestSunderer.jobQueues.size(); ++i){
             queuePick.add(i);
         }
 
@@ -64,7 +64,7 @@ public class SeparateTraffic {
             job.arriveTime = Long.parseLong(elem[++pointer])/1000.0 * Settings.timeScale; // normalized time: s
 
             Collections.shuffle(queuePick, Settings.r);
-            job.jobQueue = SeparateScheduler.jobQueues.get(queuePick.get(0));
+            job.jobQueue = TestSunderer.jobQueues.get(queuePick.get(0));
 
             // parse the num
             int mappers = Integer.parseInt(elem[++pointer]); // 注意这只是从日志中读取出来的mapper的数量, 并不是最终模拟采用的数量, 后面会自行估计一下inputSize进而再估计实际应该部署的mapper数量

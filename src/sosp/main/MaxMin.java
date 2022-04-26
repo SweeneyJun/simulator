@@ -36,8 +36,8 @@ public class MaxMin {
 
 				// 4.13 添加的置0前归还带宽的过程
 				for (int node : flow.route) {
-					SeparateScheduler.freeBw[node] += flow.allocatedBw;
-					SeparateScheduler.totalFreeBw += flow.allocatedBw;
+					TestSunderer.freeBw[node] += flow.allocatedBw;
+					TestSunderer.totalFreeBw += flow.allocatedBw;
 					link_checked.set(node, link_bw[node] < Settings.epsilon);
 				}
 

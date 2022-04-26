@@ -191,7 +191,7 @@ public class Priority {
 		assert(Settings.nPriorities-1 >= 0);
 		double[] thres = new double[Settings.nPriorities-1];
 		double min = Double.POSITIVE_INFINITY, max = 0;
-		for(Job job:SeparateScheduler.jobs){
+		for(Job job:TestSunderer.jobs){
 			Coflow coflow = job.coflow;
 			min = Math.min(min, coflow.size);
 			max = Math.max(max, coflow.size);
@@ -208,7 +208,7 @@ public class Priority {
 		assert(Settings.nPriorities-1 >= 0);
 		double[] thres = new double[Settings.nPriorities-1];
 		double min = Double.POSITIVE_INFINITY, max = 0;
-		for(Job job:SeparateScheduler.jobs){
+		for(Job job:TestSunderer.jobs){
 			Coflow coflow = job.coflow;
 			for(Macroflow mf:coflow.macroflows){
 				min = Math.min(min, mf.size);
@@ -252,7 +252,7 @@ public class Priority {
 		@SuppressWarnings("unchecked") ArrayList<Flow>[] activeFlows = new ArrayList[Settings.nPriorities];
 		for(int i=0;i<activeFlows.length;++i)
 			activeFlows[i] = new ArrayList<Flow>();
-		for(ReduceTask reducer:SeparateScheduler.activeReducers){
+		for(ReduceTask reducer:TestSunderer.activeReducers){
 			Macroflow mf = reducer.macroflow;
 			if(mf.finishTime>=0)
 				continue;
@@ -277,7 +277,7 @@ public class Priority {
 	// wcx: 抽象成一个远端节点后似乎不需要考虑这个流优先级了
 //	public static ArrayList<Flow>[] InputPriority(int nRealMappers){
 //		assert(Settings.isSeparate);
-//		assert(SeparateScheduler.jobs.length > 0);
+//		assert(TestSunderer.jobs.length > 0);
 //
 //		if(ifThres == null){
 //			ifThres = expThresholdsInputFlow(nRealMappers);
@@ -286,7 +286,7 @@ public class Priority {
 //		for(int i = 0; i < activeFlows.length; ++i){
 //			activeFlows[i] = new ArrayList<Flow>();
 //		}
-//		for(MapTask mapper: SeparateScheduler.arrivedMappers){
+//		for(MapTask mapper: TestSunderer.arrivedMappers){
 //
 //		}
 }
