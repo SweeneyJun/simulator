@@ -119,17 +119,17 @@ public class Job {
 		++nActiveReducers;
 		assert(pendingReducerList.remove(reducer)); // assert(pendingReducerList.remove(reducer))为什么没用了! answer: java默认禁用assert, 要开启-ea参数
 		emittedReducerList.add(reducer);
-		System.out.printf("reducer %d of job %d start at time %f\n", reducer.reducerId, reducer._job.jobId, TestSunderer.time);
+		// System.out.printf("reducer %d of job %d start at time %f\n", reducer.reducerId, reducer._job.jobId, TestSunderer.time);
 	}
 	
 	public void oneReducerFinished(ReduceTask reducer){
 		--nActiveReducers;
-		System.out.printf("reducer %d of job %d finish at time %f\n", reducer.reducerId, jobId, TestSunderer.time);
+		// System.out.printf("reducer %d of job %d finish at time %f\n", reducer.reducerId, jobId, TestSunderer.time);
 	}
 	
 	public void mapStageFinish(double time){
 		mapStageFinishTime = time;
-		System.out.printf("mapStage of job %d finish at time %f\n", coflow._job.jobId, time);
+		// System.out.printf("mapStage of job %d finish at time %f\n", coflow._job.jobId, time);
 		for(Macroflow mf:coflow.macroflows)
 			mf.setFlowSize();
 	}

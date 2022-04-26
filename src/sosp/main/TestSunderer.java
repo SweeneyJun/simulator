@@ -37,6 +37,9 @@ public class TestSunderer{
 //    public static ArrayList<MapTask> arrivedMappers = new ArrayList<MapTask>(); // job已经到来, 但仍未执行input的MapTask  因为要先选择job再选择里面的MapTask进行Input
     // 所以不太方便在Scheduler里设置全局的统计
 
+    public static long alCount = 0;
+    public static double alTime = 0;
+
     public static ArrayList<JobQueue> jobQueues = new ArrayList<>();
 
 
@@ -45,59 +48,35 @@ public class TestSunderer{
     private static PrintWriter scheduleOut = null;
 
     public static void main(String[] args) throws Exception{
+        assert(args.length == 2);
+        int ep = Integer.parseInt(args[1]);
+
         jobQueues.add(new JobQueue("fair", 0.5, 1));
+//		jobQueues.add(new JobQueue("fair", 0.5, 0.8));
 
-        Measurement.tic(); // 系统当前时间
-        Settings.loadFromFile("config.ini", args);
-        assert(Settings.isSeparate == true); // 非存算分离场景下不应该运行这个类
-        initialize();
+        PrintWriter cout = new PrintWriter(new FileOutputStream("./result/runTimeLog_" + args[1] + "_" + args[0]));
+        for(int j = 0; j < ep; ++j) {
+            time = 0;
 
-        simulate();
+            Settings.loadFromFile("config.ini", args);//载入配置文件
+            initialize(args[0]);
 
-        Measurement.OutputCompletionTime2(jobs);
+            simulate();
+            System.out.printf("Loop Times: %d ScheduleTime:%f  avgTime: %f\n", alCount, alTime/1000, alTime/(alCount * 1000));
+            // Measurement.OutputCompletionTime2(jobs);
 
-        PrintWriter cout = new PrintWriter(new FileOutputStream("tp_sep.txt"));
-        for(int i=0;i<throughput.size();++i){
-            cout.printf("%.3f %.3f %.3f\n",throughput.get(i).time, throughput.get(i).hostThroughput, slot.get(i));
+
+
+            cout.printf("%d  %f  %f\n", alCount, alTime/1000, alTime/(alCount * 1000));
+
         }
-
         cout.close();
-        Measurement.toc();
-
-        ArrayList<Task> tasks = new ArrayList<>();
-        for (Job job: jobs) {
-//			System.out.println(job.arriveTime + ", " + job.reduceStageFinishTime);
-            for (int i = 0; i < Settings.nHosts; i ++){
-                tasks.addAll(job.emittedMapperList[i]);
-            }
-            tasks.addAll(job.emittedReducerList);
-        }
-        System.out.printf("The number of tasks in all jobs: %d\n", tasks.size());
-        Collections.sort(tasks, new Comparator<Task>(){
-            @Override public int compare(Task arg0, Task arg1) {
-                return arg1.startTime==arg0.startTime ? 0 : (arg1.startTime>arg0.startTime ? -1 : 1);
-            }
-        });
-        for(Task task: tasks) {
-            if(task instanceof MapTask) {
-                MapTask mt = (MapTask) task;
-                scheduleOut.println(mt._job.jobId + ", " + mt.mapperId + ", " + mt.host + ", " + mt.startTime + ", " + mt.finishTime + ", " + -1);
-            }
-            if(task instanceof ReduceTask) {
-                ReduceTask rt = (ReduceTask) task;
-                scheduleOut.println(rt._job.jobId + ", " + rt.reducerId + ", " + rt.host + ", " + rt.startTime + ", " + rt.networkFinishTime + ", " + rt.computationFinishTime);
-            }
-        }
-        scheduleOut.flush();
-        scheduleOut.close();
-//		taskTp.flush();
-//		taskTp.close();
-
-        System.out.println("max reducer num: " + HostInfo.hostMaxReducerNum);
     }
 
-    private static void initialize() throws FileNotFoundException{
-        jobs = SeparateTraffic.loadFromFile("FB2010-1Hr-150-0.txt");
+    private static void initialize(String log) throws FileNotFoundException{
+        alCount = 0;
+        alTime = 0;
+        jobs = Traffic.loadFromFile(log);
         freeSlots = new int[Settings.nHosts];
         for(int i = 0; i < freeSlots.length; ++i) {
             freeSlots[i] = Settings.nSlots;
@@ -119,7 +98,7 @@ public class TestSunderer{
 
         switchFreeBw = Settings.switchBottleFreeBw;
 
-        System.out.printf("TotalFreeBw: %f\n", totalFreeBw);
+        // System.out.printf("TotalFreeBw: %f\n", totalFreeBw);
 
 
         throughput = Measurement.newThroughput();
@@ -134,7 +113,7 @@ public class TestSunderer{
         scheduleOut = new PrintWriter(new FileOutputStream("SeparateSchedule.txt"));
 
         parallelism = (int)(Settings.parallelism*Settings.nSlots*Settings.nHosts); // 这几行都是复制的*山
-        System.out.println(parallelism);
+        // System.out.println(parallelism);
         assert(Settings.nPriorities>=0);
         assert(Settings.minTimeStep>0);
         assert(Settings.epsilon>=0); // 这个在部分比较运算时加上, 避免产生浮点数舍入误差
@@ -157,7 +136,7 @@ public class TestSunderer{
                 else{
                     pendingJobs.add(job);
                 }
-                System.out.printf("%.3f job %d started\n", time, job.jobId);
+                // System.out.printf("%.3f job %d started\n", time, job.jobId);
 
                 job.notInputMapperList = new ArrayList<MapTask>();
                 for(int i = 0; i < job.nMappers; i++){
@@ -168,7 +147,11 @@ public class TestSunderer{
             // 2. scheduling tasks (both mapper and reducer)
             // when scheduling the mapTask, handle the input file transmitting process
             while(true){
-                HostAndTask ht = Settings.algo.allocateHostAndTask(); // TODO 这里如果不把Setting.algo设为DoubleFIFO会报错, 因为到目前位置只实现了这一个存算分离场景下的Algorithm
+                alCount += 1;
+                // HostAndTask represent the <host, task> pair
+                double tempTime = System.currentTimeMillis();
+                HostAndTask ht = Settings.algo.allocateHostAndTask();
+                alTime += (System.currentTimeMillis() - tempTime);
                 if(ht == null){
                     break;
                 }
@@ -387,14 +370,14 @@ public class TestSunderer{
                         job.reduceStageFinish(time);
                         job.jobQueue.activeJobs.remove(job);
                         itj.remove();
-                        System.out.printf("%.3f job %d finished\n", time, job.jobId);
+                        // System.out.printf("%.3f job %d finished\n", time, job.jobId);
                     }
                     if(job.nReducers == 0 && job.mapStageFinishTime > 0) {
                         ++nFinishedJobs;
                         job.reduceStageFinish(time);
                         job.jobQueue.activeJobs.remove(job);
                         itj.remove();
-                        System.out.printf("%.3f job %d finished\n", time, job.jobId);
+                        // System.out.printf("%.3f job %d finished\n", time, job.jobId);
                     }
                 }else{
                     assert(false);
@@ -432,8 +415,8 @@ public class TestSunderer{
             double remainingTrans = mapper.inputStartTime + mapper.predictInputTime - time;
             // System.out.printf("remainingTrans: %f Count: %d\n", remainingTrans, debugCount);
             if(remainingTrans < 0){
-                System.out.printf("remainingComp < 0! mapper.inputStartTime: %f + mapper.predictInputTime: %f - time: %f = remainingComp: %f\n", mapper.inputStartTime, mapper.predictInputTime, time, remainingTrans);
-                System.out.flush();
+                //System.out.printf("remainingComp < 0! mapper.inputStartTime: %f + mapper.predictInputTime: %f - time: %f = remainingComp: %f\n", mapper.inputStartTime, mapper.predictInputTime, time, remainingTrans);
+                //System.out.flush();
             }
             assert (remainingTrans >= 0);
             step = Math.min(step, remainingTrans);
@@ -446,8 +429,8 @@ public class TestSunderer{
             assert (mapper.startTime > 0);
             double remainingComp = mapper.startTime + mapper.computationDelay - time;
             if(remainingComp < 0){
-                System.out.printf("remainingComp < 0! mapper.startTime: %f + mapper.computationDelay: %f - time: %f = remainingComp: %f\n", mapper.startTime, mapper.computationDelay, time, remainingComp);
-                System.out.flush();
+                //System.out.printf("remainingComp < 0! mapper.startTime: %f + mapper.computationDelay: %f - time: %f = remainingComp: %f\n", mapper.startTime, mapper.computationDelay, time, remainingComp);
+                //System.out.flush();
             }
             assert (remainingComp >= 0);
             step = Math.min(step, remainingComp);
@@ -476,8 +459,8 @@ public class TestSunderer{
                 assert(reducer.computationFinishTime<0);
                 double remainingComp = reducer.networkFinishTime + reducer.computationDelay - time;
                 if(remainingComp < 0){
-                    System.out.printf("remainingComp < 0! reducer.networkFinishTime: %f + reducer.computationDelay: %f - time: %f = remainingComp: %f\n", reducer.networkFinishTime, reducer.computationDelay, time, remainingComp);
-                    System.out.flush();
+                    //System.out.printf("remainingComp < 0! reducer.networkFinishTime: %f + reducer.computationDelay: %f - time: %f = remainingComp: %f\n", reducer.networkFinishTime, reducer.computationDelay, time, remainingComp);
+                    //System.out.flush();
                 }
                 assert(remainingComp >= 0);
                 step = Math.min(step, remainingComp);
