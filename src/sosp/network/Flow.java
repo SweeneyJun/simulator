@@ -35,6 +35,6 @@ public class Flow {
 	
 	public void Finish(double time){
 		finishTime = time;
-		System.out.printf("reducer %d's MacroFlow's flow %d finish at time %f\n", _macroflow._reducer.reducerId, flowId, time);
+		// System.out.printf("reducer %d's MacroFlow's flow %d finish at time %f\n", _macroflow._reducer.reducerId, flowId, time);
 	}
 }

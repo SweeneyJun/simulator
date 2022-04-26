@@ -54,7 +54,7 @@ public class TestSunderer{
         jobQueues.add(new JobQueue("fair", 0.5, 1));
 //		jobQueues.add(new JobQueue("fair", 0.5, 0.8));
 
-        PrintWriter cout = new PrintWriter(new FileOutputStream("./result/runTimeLog_" + args[1] + "_" + args[0]));
+        PrintWriter cout = new PrintWriter(new FileOutputStream("./result/SLog_" + args[1] + "_" + args[0]));
         for(int j = 0; j < ep; ++j) {
             time = 0;
 
@@ -62,12 +62,12 @@ public class TestSunderer{
             initialize(args[0]);
 
             simulate();
-            System.out.printf("Loop Times: %d ScheduleTime:%f  avgTime: %f\n", alCount, alTime/1000, alTime/(alCount * 1000));
+            System.out.printf("Loop Times: %d ScheduleTime:%f  avgTime: %f\n", alCount, alTime, alTime/(alCount));
             // Measurement.OutputCompletionTime2(jobs);
 
 
 
-            cout.printf("%d  %f  %f\n", alCount, alTime/1000, alTime/(alCount * 1000));
+            cout.printf("%d  %f  %f\n", alCount, alTime, alTime/(alCount));
 
         }
         cout.close();
@@ -76,7 +76,7 @@ public class TestSunderer{
     private static void initialize(String log) throws FileNotFoundException{
         alCount = 0;
         alTime = 0;
-        jobs = Traffic.loadFromFile(log);
+        jobs = SeparateTraffic.loadFromFile(log);
         freeSlots = new int[Settings.nHosts];
         for(int i = 0; i < freeSlots.length; ++i) {
             freeSlots[i] = Settings.nSlots;
@@ -110,7 +110,7 @@ public class TestSunderer{
         for(int i = 0; i < Settings.nHosts;i ++) {
             hostInfos[i] = new HostInfo(i);
         }
-        scheduleOut = new PrintWriter(new FileOutputStream("SeparateSchedule.txt"));
+        // scheduleOut = new PrintWriter(new FileOutputStream("SeparateSchedule.txt"));
 
         parallelism = (int)(Settings.parallelism*Settings.nSlots*Settings.nHosts); // 这几行都是复制的*山
         // System.out.println(parallelism);
@@ -122,6 +122,7 @@ public class TestSunderer{
 
     private static void simulate(){
         int nFinishedJobs = 0;
+        Job.nArrivedJobs = 0;
         while(nFinishedJobs < jobs.length){ // 条件成立说明还有没完成的job
             while(Job.nArrivedJobs < jobs.length && jobs[Job.nArrivedJobs].arriveTime <= time + Settings.epsilon){ // 还有可以到来的job, 以及模拟时间追上到达时间时才可以开始调度该job
                 debugCount = 0;

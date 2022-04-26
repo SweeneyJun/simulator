@@ -150,7 +150,7 @@ public class SeparateTraffic {
             // System.out.printf("Read jobID: %d from log file\n", jobId-1);
         }
         cin.close();
-        System.out.println("i: "+ ii);
+        // System.out.println("i: "+ ii);
         return jobs;
     }
 }
